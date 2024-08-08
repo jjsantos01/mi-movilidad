@@ -98,6 +98,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
   }
 
+  const colorPalette = {
+    "STC": 'rgba(255, 99, 132, 0.8)',
+    "ECOBICI": 'rgba(54, 162, 235, 0.8)',
+    "METROBÚS": 'rgba(255, 206, 86, 0.8)',
+    "Organismo4": 'rgba(75, 192, 192, 0.8)',
+    "Organismo5": 'rgba(153, 102, 255, 0.8)',
+    // Añade más organismos y colores según sea necesario
+  };
+
+
+function getColorForOrganismo(organismo) {
+    return colorPalette[organismo] || 'rgba(0, 0, 0, 0.8)'; // Color por defecto si no se encuentra el organismo
+}
+
   function createPieChart(viajes) {
       const organismoCounts = viajes.reduce((acc, viaje) => {
           acc[viaje.organismo] = (acc[viaje.organismo] || 0) + 1;
@@ -119,13 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
               labels: labels,
               datasets: [{
                   data: dataValues,
-                  backgroundColor: [
-                      'rgba(255, 99, 132, 0.8)',
-                      'rgba(54, 162, 235, 0.8)',
-                      'rgba(255, 206, 86, 0.8)',
-                      'rgba(75, 192, 192, 0.8)',
-                      'rgba(153, 102, 255, 0.8)',
-                  ],
+                  backgroundColor: labels.map(label => getColorForOrganismo(label)),
               }]
           },
           options: {
@@ -175,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return found ? found.value : 0;
             }),
             fill: false,
-            borderColor: randomColor(),
+            borderColor: getColorForOrganismo(organismo),
         };
     });
     console.log(datasets);
@@ -232,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const found = dataValues[organismo].find(d => d.day === day);
                 return found ? found.value : 0;
             }),
-            backgroundColor: randomColor(), // Reutiliza la función randomColor para los colores
+            backgroundColor: getColorForOrganismo(organismo),
         };
     });
 
