@@ -11,11 +11,13 @@
     <div class="container">
         <h1>Consulta de Tarjetas SEMOVI</h1>
         <form id="searchForm">
-            <input type="text" id="serieInput" placeholder="Ingrese el número de serie" required>
+            <input type="text" id="serieInput" placeholder="Ingrese el número de serie" value="0">
             <button type="submit">Buscar</button>
         </form>
         <div id="chartContainer">
           <canvas id="pieChart"></canvas>
+          <canvas id="lineChart"></canvas>
+          <canvas id="stackedBarChart"></canvas>
         </div>
       </div>
       <div id="results">

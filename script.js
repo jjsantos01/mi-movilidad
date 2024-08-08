@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
               const viajes = processViajes(data);
               displayResults(viajes);
               createPieChart(viajes);
+              createLineChart(viajes);
+              createStackedBarChart(viajes);
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
@@ -22,27 +24,35 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
+  const prod = 0; // 0 para usar datos locales, 1 para usar API
+
   async function fetchData(serie) {
-      const response = await fetch('https://app.semovi.cdmx.gob.mx/micrositio/291-trazabilidad_tarjetas.php', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'Origin': 'https://app.semovi.cdmx.gob.mx',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-          },
-          body: JSON.stringify({
-              serie: serie,
-              anio: '2024',
-              operacion: 'todas',
-          }),
-      });
+    if (prod) {
+        const response = await fetch('https://app.semovi.cdmx.gob.mx/micrositio/291-trazabilidad_tarjetas.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Origin': 'https://app.semovi.cdmx.gob.mx',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+            },
+            body: JSON.stringify({
+                serie: serie,
+                anio: '2024',
+                operacion: 'todas',
+            }),
+        });
 
-      if (!response.ok) {
-          throw new Error('Network response was not ok');
-      }
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
 
-      const jsonResponse = await response.json();
-      return jsonResponse.data;
+        const jsonResponse = await response.json();
+        return jsonResponse.data;
+    } else {
+        const response = await fetch('http://localhost:8000/datos/data.json');
+        const data = await response.json();
+        return data.data //.filter(item => item.serie === serie);
+    }
   }
 
   function displayResults(data) {
@@ -78,7 +88,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function processViajes(data) {
-    return data.filter(item => (item.operacion !== "71-FIN DE VIAJE") && (item.operacion !== "00-RECARGA"));
+    return data
+        .filter(item => (item.operacion !== "71-FIN DE VIAJE") && (item.operacion !== "00-RECARGA"))
+        .map(item => {
+            const date = new Date(item.fecha.split(' ')[0].split('-').reverse().join('-'));
+            const days = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+            item.dayOfWeek = days[date.getDay()]; // Calcula el día de la semana
+            return item;
+        });
   }
 
   function createPieChart(viajes) {
@@ -97,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       pieChart = new Chart(ctx, {
-          type: 'pie',
+          type: 'doughnut',
           data: {
               labels: labels,
               datasets: [{
@@ -125,4 +142,133 @@ document.addEventListener('DOMContentLoaded', () => {
           }
       });
   }
+
+  let lineChart;
+  function createLineChart(viajes) {
+    const organismoDates = viajes.reduce((acc, viaje) => {
+        const date = new Date(viaje.fecha.split(' ')[0].split('-').reverse().join('-'));
+        const organismo = viaje.organismo;
+        const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // Agrupa por mes y año
+        const key = `${organismo}+${monthYear}`;
+
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {});
+    console.log(organismoDates);
+    const labels = [];
+    const dataValues = {};
+
+    Object.keys(organismoDates).forEach(key => {
+        const [organismo, monthYear] = key.split('+');
+        if (!labels.includes(monthYear)) labels.push(monthYear);
+
+        if (!dataValues[organismo]) dataValues[organismo] = [];
+        dataValues[organismo].push({ date: monthYear, value: organismoDates[key] });
+    });
+    labels.sort((a, b) => new Date(a) - new Date(b));
+    console.log(dataValues);
+    const datasets = Object.keys(dataValues).map(organismo => {
+        return {
+            label: organismo,
+            data: labels.map(monthYear => {
+                const found = dataValues[organismo].find(d => d.date === monthYear);
+                return found ? found.value : 0;
+            }),
+            fill: false,
+            borderColor: randomColor(),
+        };
+    });
+    console.log(datasets);
+    const ctx = document.getElementById('lineChart').getContext('2d');
+
+    if (lineChart) {
+        lineChart.destroy();
+    }
+
+    lineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Total de Viajes Mensuales por sistema de transporte'
+                }
+            }
+        }
+    });
+  }
+
+  function createStackedBarChart(viajes) {
+    const organismoDays = viajes.reduce((acc, viaje) => {
+        const organismo = viaje.organismo;
+        const dayOfWeek = viaje.dayOfWeek;
+        const key = `${organismo}+${dayOfWeek}`;
+
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {});
+
+    const labels = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+    const dataValues = {};
+
+    Object.keys(organismoDays).forEach(key => {
+        const [organismo, dayOfWeek] = key.split('+');
+        if (!dataValues[organismo]) dataValues[organismo] = [];
+        dataValues[organismo].push({ day: dayOfWeek, value: organismoDays[key] });
+    });
+
+    const datasets = Object.keys(dataValues).map(organismo => {
+        return {
+            label: organismo,
+            data: labels.map(day => {
+                const found = dataValues[organismo].find(d => d.day === day);
+                return found ? found.value : 0;
+            }),
+            backgroundColor: randomColor(), // Reutiliza la función randomColor para los colores
+        };
+    });
+
+    const ctx = document.getElementById('stackedBarChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Total de Viajes por Organismo y Día de la Semana'
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true
+                },
+                y: {
+                    stacked: true
+                }
+            }
+        }
+    });
+  }
+
+  function randomColor() {
+      return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.8)`;
+  }
+
 });
