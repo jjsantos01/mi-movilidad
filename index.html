@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Tarjetas SEMOVI</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Consulta de Tarjetas SEMOVI</h1>
+        <form id="searchForm">
+            <input type="text" id="serieInput" placeholder="Ingrese el número de serie" required>
+            <button type="submit">Buscar</button>
+        </form>
+        <div id="chartContainer">
+          <canvas id="pieChart"></canvas>
+        </div>
+      </div>
+      <div id="results">
+          <table id="resultsTable" style="display: none;">
+              <thead>
+                  <tr id="tableHeader"></tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+          </table>
+      </div>
+      <script src="script.js"></script>
+</body>
+</html>
