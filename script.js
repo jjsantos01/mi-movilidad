@@ -14,7 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
               const data = await fetchData(serie);
               const viajes = processViajes(data);
-              const metro = createMetroObject(viajes);
+              const metro = createMetroObject(viajes, 'STC');
+              const metrobus = createMetroObject(viajes, 'METROBÚS');
               setupCollapsibleSections();
               displayResults(data);
               createPieChart(viajes);
@@ -28,9 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 createHeatmap(viajes, selectedOrganismo);
               });
               createSaldoFinalChart(data);
-              createTop10MetroLinesChart(metro);
-              createTop10MetroStationsChart(metro);
+              // Metro
+              createTop10MetroLinesChart(metro, 'STC');
+              createTop10MetroStationsChart(metro, 'STC');
               createMetroMap(metro);
+              // Metrobús
+              createTop10MetroLinesChart(metrobus, 'METROBÚS');
+              createTop10MetroStationsChart(metrobus, 'METROBÚS');
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
@@ -82,8 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function createMetroObject(viajes) {
-    return viajes.filter(viaje => viaje.organismo === 'STC');
+  function createMetroObject(viajes, selectedOrganismo = 'STC') {
+    return viajes.filter(viaje => viaje.organismo === selectedOrganismo);
   }
 
   function setupCollapsibleSections() {
@@ -174,10 +179,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Añade más organismos y colores según sea necesario
   };
 
+  function generateRandomColor() {
+      return `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 0.8)`;
+  }
 
-function getColorForOrganismo(organismo) {
-    return colorPalette[organismo] || 'rgba(0, 0, 0, 0.8)'; // Color por defecto si no se encuentra el organismo
-}
+  function getColorForOrganismo(organismo) {
+      return colorPalette[organismo] || generateRandomColor();
+  }
 
   function createPieChart(viajes) {
       const organismoCounts = viajes.reduce((acc, viaje) => {
@@ -533,7 +541,8 @@ function getColorForOrganismo(organismo) {
     });
   }
 
-  function createTop10MetroLinesChart(metro) {
+  function createTop10MetroLinesChart(metro, organismo = 'STC') {
+
     // Contar viajes por línea
     const lineaCounts = metro.reduce((acc, viaje) => {
         acc[viaje.linea] = (acc[viaje.linea] || 0) + 1;
@@ -545,11 +554,9 @@ function getColorForOrganismo(organismo) {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10);
 
-    console.log(top10Lines)
-
     const labels = top10Lines.map(([linea]) => linea);
     const data = top10Lines.map(([, count]) => count);
-    const colors = top10Lines.map(([linea]) => metroLineColors[linea] || '#000000'); // Color negro por defecto si no se encuentra
+    const colors = top10Lines.map(([linea]) => metroLineColors[linea] || generateRandomColor()); // Color negro por defecto si no se encuentra
 
     const formattedData = labels.map((label, index) => ({
       x: label,
@@ -558,9 +565,11 @@ function getColorForOrganismo(organismo) {
       strokeColor: colors[index]     // Color del borde de la barra
   }));
 
-    const chartElement = document.getElementById('top10MetroLinesChart');
+    let elementId = organismo === "STC" ? "top10MetroLinesChart" : "top10MetrobusLinesChart";
+    let sistema = organismo === "STC" ? "Metro" : "Metrobús";
+    const chartElement = document.getElementById(elementId);
     if (!chartElement) {
-        console.error('Elemento con ID "top10MetroLinesChart" no encontrado');
+        console.error(`Elemento con ID no ${elementId} encontrado`);
         return;
     }
 
@@ -592,11 +601,11 @@ function getColorForOrganismo(organismo) {
         },
         yaxis: {
             title: {
-                text: 'Línea de Metro'
+                text: `Línea de ${sistema}`
             }
         },
         title: {
-            text: 'Top 10 Líneas de Metro con más viajes',
+            text: `Top 10 Líneas de ${sistema} con más viajes`,
             align: 'center'
         },
         tooltip: {
@@ -617,7 +626,7 @@ function getColorForOrganismo(organismo) {
     chartElement.chart = chart;
   }
 
-  function createTop10MetroStationsChart(metro) {
+  function createTop10MetroStationsChart(metro, organismo = 'STC') {
     // Contar viajes por estación
     const stationCounts = metro.reduce((acc, viaje) => {
         acc[viaje.estacion] = (acc[viaje.estacion] || 0) + 1;
@@ -625,7 +634,7 @@ function getColorForOrganismo(organismo) {
     }, {});
 
     const stationColors = metro.reduce((acc, viaje) => {
-        acc[viaje.estacion] = metroLineColors[viaje.linea] || '#000000'; // Color
+        acc[viaje.estacion] = metroLineColors[viaje.linea] || generateRandomColor(); // Color
         return acc;
     }
     , {});
@@ -646,12 +655,14 @@ function getColorForOrganismo(organismo) {
       strokeColor: colors[index]     // Color del borde de la barra
   }));
 
-
-    const chartElement = document.getElementById('top10MetroStationsChart');
+    let elementId = organismo === "STC" ? "top10MetroStationsChart" : "top10MetrobusStationsChart";
+    let sistema = organismo === "STC" ? "Metro" : "Metrobús";
+    const chartElement = document.getElementById(elementId);
     if (!chartElement) {
-        console.error('Elemento con ID "top10MetroStationsChart" no encontrado');
+        console.error(`Elemento con ID no ${elementId} encontrado`);
         return;
     }
+
 
     // Limpiar el contenido existente
     chartElement.innerHTML = '';
@@ -681,11 +692,11 @@ function getColorForOrganismo(organismo) {
         },
         yaxis: {
             title: {
-                text: 'Estación de Metro'
+                text: `Estación de ${sistema}`
             }
         },
         title: {
-            text: 'Top 10 estaciones de Metro con más viajes',
+            text: `Top 10 Estaciones de ${sistema} con más viajes`,
             align: 'center'
         },
         tooltip: {
