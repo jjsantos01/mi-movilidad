@@ -18,7 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
               createLineChart(viajes);
               createStackedBarChart(viajes);
               createBarChartByMomentoDia(viajes);
+              populateOrganismoSelector(viajes);
               createHeatmap(viajes);
+              document.getElementById('organismoSelector').addEventListener('change', function() {
+                const selectedOrganismo = this.value;
+                createHeatmap(viajes, selectedOrganismo);
+              });
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
@@ -344,8 +349,10 @@ function getColorForOrganismo(organismo) {
     });
   }
 
-  function createHeatmap(viajes) {
-    const heatmapData = viajes.reduce((acc, viaje) => {
+  function createHeatmap(viajes, selectedOrganismo = 'Todos') {
+    const filteredViajes = selectedOrganismo === 'Todos' ? viajes : viajes.filter(viaje => viaje.organismo === selectedOrganismo);
+
+    const heatmapData = filteredViajes.reduce((acc, viaje) => {
         const dayOfWeek = viaje.dayOfWeek;
         const momentoDia = viaje.momento_dia;
         const key = `${dayOfWeek}+${momentoDia}`;
@@ -390,4 +397,16 @@ function getColorForOrganismo(organismo) {
     Plotly.newPlot('heatmapChart', data, layout);
   }
 
+
+  function populateOrganismoSelector(viajes) {
+    const organismos = [...new Set(viajes.map(viaje => viaje.organismo))];
+    const selector = document.getElementById('organismoSelector');
+
+    organismos.forEach(organismo => {
+        const option = document.createElement('option');
+        option.value = organismo;
+        option.text = organismo;
+        selector.add(option);
+    });
+  }
 });
