@@ -75,3 +75,40 @@ tr:hover {
   border-radius: 5px;
   margin-top: 20px;
 }
+
+.collapsible-section {
+  background-color: #fff;
+  margin-top: 20px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.collapsible-section h2 {
+  background-color: #f2f2f2;
+  padding: 10px 15px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.collapsible-section h2::after {
+  content: '\25BC';
+  float: right;
+}
+
+.collapsible-section h2.active::after {
+  content: '\25B2';
+}
+
+.section-content {
+  padding: 20px;
+  display: none;
+}
+
+.section-content.active {
+  display: block;
+}
+
+#map {
+  height: 600px;
+  width: 100%;
+}

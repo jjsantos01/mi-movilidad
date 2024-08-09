@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsTable = document.getElementById('resultsTable');
   const tableHeader = document.getElementById('tableHeader');
   const tableBody = document.getElementById('tableBody');
-  const prod = 1  ; // 0 para usar datos locales, 1 para usar API
+  const prod = 0  ; // 0 para usar datos locales, 1 para usar API
   let pieChart;
 
   form.addEventListener('submit', async (e) => {
@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
               const data = await fetchData(serie);
               const viajes = processViajes(data);
+              const metro = createMetroObject(viajes);
+              setupCollapsibleSections();
               displayResults(data);
               createPieChart(viajes);
               createLineChart(viajes);
@@ -26,6 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 createHeatmap(viajes, selectedOrganismo);
               });
               createSaldoFinalChart(data);
+              createTop10MetroLinesChart(metro);
+              createTop10MetroStationsChart(metro);
+              createMetroMap(metro);
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
@@ -62,6 +67,26 @@ document.addEventListener('DOMContentLoaded', () => {
         return data.data //.filter(item => item.serie === serie);
     }
   }
+
+  function createMetroObject(viajes) {
+    return viajes.filter(viaje => viaje.organismo === 'STC');
+  }
+
+  function setupCollapsibleSections() {
+    const sections = document.querySelectorAll('.collapsible-section h2');
+    sections.forEach(section => {
+      section.addEventListener('click', () => {
+        section.classList.toggle('active');
+        const content = section.nextElementSibling;
+        content.classList.toggle('active');
+        if (content.classList.contains('active')) {
+          content.style.display = 'block';
+        } else {
+          content.style.display = 'none';
+        }
+      });
+     });
+    }
 
   function displayResults(data) {
       if (data && data.length > 0) {
@@ -121,9 +146,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const colorPalette = {
-    "STC": 'rgba(255, 99, 132, 0.8)',
-    "ECOBICI": 'rgba(54, 162, 235, 0.8)',
-    "METROBÚS": 'rgba(255, 206, 86, 0.8)',
+    "STC": 'rgba(254, 80, 0, 0.8)', // FE5000
+    "ECOBICI": 'rgba(0, 154, 68, 0.8)', // #009A44
+    "METROBÚS": 'rgba(200, 16, 46, 0.8)', // #C8102E
+    "RUTA": 'rgba(155, 38, 182, 0.8)', //#9B26B6
+    "CABLEBUS": 'rgba(78, 195, 224, 0.8)', // #4EC3E0
+    "CETRAM": "rgba(240, 78, 152, 0.8)", // #F04E98
+    "STE": 'rgba(0, 87, 184, 0.8)', // #0057B8
+    "RTP": 'rgba(120, 190, 32, 0.8)', // #78BE20
     "Mañana": 'rgba(75, 192, 192, 0.8)',
     "Tarde": 'rgba(153, 102, 255, 0.8)',
     "Noche": 'rgba(22, 192, 67, 0.8)',
@@ -373,7 +403,6 @@ function getColorForOrganismo(organismo) {
             };
         });
     }).flat();
-    console.log(data);
 
     const options = {
         series: diasSemana.map(dia => ({
@@ -398,7 +427,6 @@ function getColorForOrganismo(organismo) {
             categories: diasSemana.reverse()
         }
     };
-    console.log(options);
     const chart = new ApexCharts(heatmapElement, options);
     chart.render();
 
@@ -489,6 +517,224 @@ function getColorForOrganismo(organismo) {
             }
         }
     });
+  }
+
+  function createTop10MetroLinesChart(metro) {
+    // Contar viajes por línea
+    const lineaCounts = metro.reduce((acc, viaje) => {
+        acc[viaje.linea] = (acc[viaje.linea] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Convertir a array, ordenar y tomar los top 10
+    const top10Lines = Object.entries(lineaCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+    const labels = top10Lines.map(([linea]) => linea);
+    const data = top10Lines.map(([, count]) => count);
+
+    const chartElement = document.getElementById('top10MetroLinesChart');
+    if (!chartElement) {
+        console.error('Elemento con ID "top10MetroLinesChart" no encontrado');
+        return;
+    }
+
+    // Limpiar el contenido existente
+    chartElement.innerHTML = '';
+
+    const options = {
+        series: [{
+            data: data
+        }],
+        chart: {
+            type: 'bar',
+            height: 350
+        },
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                horizontal: true,
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        xaxis: {
+            categories: labels,
+            title: {
+                text: 'Número de viajes'
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Línea de Metro'
+            }
+        },
+        title: {
+            text: 'Top 10 Líneas de Metro con más viajes',
+            align: 'center'
+        },
+        tooltip: {
+            y: {
+                title: {
+                    formatter: function (seriesName) {
+                        return "Viajes:";
+                    }
+                }
+            }
+        }
+    };
+
+    const chart = new ApexCharts(chartElement, options);
+    chart.render();
+
+    // Guardar la instancia del gráfico para poder actualizarla o destruirla más tarde si es necesario
+    chartElement.chart = chart;
+  }
+
+  function createTop10MetroStationsChart(metro) {
+    // Contar viajes por estación
+    const stationCounts = metro.reduce((acc, viaje) => {
+        acc[viaje.estacion] = (acc[viaje.estacion] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Convertir a array, ordenar y tomar los top 10
+    const top10Stations = Object.entries(stationCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+    const labels = top10Stations.map(([linea]) => linea);
+    const data = top10Stations.map(([, count]) => count);
+
+    const chartElement = document.getElementById('top10MetroStationsChart');
+    if (!chartElement) {
+        console.error('Elemento con ID "top10MetroStationsChart" no encontrado');
+        return;
+    }
+
+    // Limpiar el contenido existente
+    chartElement.innerHTML = '';
+
+    const options = {
+        series: [{
+            data: data
+        }],
+        chart: {
+            type: 'bar',
+            height: 350
+        },
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                horizontal: true,
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        xaxis: {
+            categories: labels,
+            title: {
+                text: 'Número de viajes'
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Estación de Metro'
+            }
+        },
+        title: {
+            text: 'Top 10 estaciones de Metro con más viajes',
+            align: 'center'
+        },
+        tooltip: {
+            y: {
+                title: {
+                    formatter: function (seriesName) {
+                        return "Viajes:";
+                    }
+                }
+            }
+        }
+    };
+
+    const chart = new ApexCharts(chartElement, options);
+    chart.render();
+
+    // Guardar la instancia del gráfico para poder actualizarla o destruirla más tarde si es necesario
+    chartElement.chart = chart;
+  }
+
+  function createMetroMap(metro) {
+    // Inicializa el mapa y establece la vista inicial
+    // Colores de las líneas del metro
+    var metroLineColors = {
+      "1": '#F04E98',
+      "2": '#005EB8',
+      "3": '#AF9800',
+      "4": '#6BBBAE',
+      "5": '#FFD100',
+      "6": '#DA291C',
+      "7": '#E87722',
+      "8": '#009A44',
+      "9": '#512F2E',
+      "A": '#981D97',
+      "B": '#B1B3B3',
+      "12": '#B0A32A',
+    }
+
+    // Inicializa el mapa y establece la vista inicial
+    var map = L.map('map').setView([19.432608, -99.133209], 12);
+
+    // Capa base de CartoDB Positron
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+
+    // Cargar y mostrar las líneas del metro
+    fetch('datos/lineas_metro.geojson')
+    .then(response => response.json())
+    .then(data => {
+    L.geoJSON(data,
+      {
+    style: function (feature) {
+      return {
+        color: metroLineColors[feature.properties.LINEA],
+        weight: 3
+      };
+    }
+    }).addTo(map);
+    })
+    .catch(error => console.error('Error al cargar las líneas del metro:', error));
+
+    // Cargar los datos de viajes (Simulando datos de ejemplo para ilustrar)
+    const viajesEstaciones = metro.reduce((acc, viaje) => {
+      acc[viaje.estacion.toLowerCase()] = (acc[viaje.estacion.toLowerCase()] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Cargar y mostrar las estaciones del metro
+    fetch('datos/estaciones_metro.geojson')
+    .then(response => response.json())
+    .then(data => {
+    L.geoJSON(data, {
+    pointToLayer: function (feature, latlng) {
+    var nombreEstacion = feature.properties.NOMBRE.toLowerCase();
+    var numViajes = viajesEstaciones[nombreEstacion] || 0;
+    if (numViajes > 0) {
+    return L.circleMarker(latlng, {
+      radius: Math.min(numViajes, 20),  // Ajustar el factor de escala según sea necesario
+      color: "blue",
+      fillColor: "blue",
+      fillOpacity: 0.8
+    }).bindPopup("<strong>" + feature.properties.NOMBRE + "</strong><br>Viajes: " + numViajes);
+    }
+    }
+    }).addTo(map);
+    })
+    .catch(error => console.error('Error al cargar las estaciones del metro:', error));
   }
 
   function parseDateTime(dateTimeString) {
