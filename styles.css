@@ -108,7 +108,12 @@ tr:hover {
   display: block;
 }
 
-#map {
+#mapMetro {
+  height: 600px;
+  width: 100%;
+}
+
+#mapMetrobús {
   height: 600px;
   width: 100%;
 }

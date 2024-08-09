@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsTable = document.getElementById('resultsTable');
   const tableHeader = document.getElementById('tableHeader');
   const tableBody = document.getElementById('tableBody');
-  const prod = 0  ; // 0 para usar datos locales, 1 para usar API
+  const prod = 1  ; // 0 para usar datos locales, 1 para usar API
   let pieChart;
 
   form.addEventListener('submit', async (e) => {
@@ -36,12 +36,24 @@ document.addEventListener('DOMContentLoaded', () => {
               // Metrobús
               createTop10MetroLinesChart(metrobus, 'METROBÚS');
               createTop10MetroStationsChart(metrobus, 'METROBÚS');
+              createMetroMap(metrobus, 'METROBÚS');
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
           }
       }
   });
+
+  const sistemas = {
+    "STC": "Metro",
+    "METROBÚS": "Metrobús",
+    "ECOBICI": "Ecobici",
+    "RUTA": "Ruta",
+    "CABLEBUS": "Cablebús",
+    "CETRAM": "Cetram",
+    "STE": "STE",
+    "RTP": "RTP"
+  }
 
   const metroLineColors = {
     "1": '#F04E98',
@@ -566,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }));
 
     let elementId = organismo === "STC" ? "top10MetroLinesChart" : "top10MetrobusLinesChart";
-    let sistema = organismo === "STC" ? "Metro" : "Metrobús";
+    let sistema = sistemas[organismo]
     const chartElement = document.getElementById(elementId);
     if (!chartElement) {
         console.error(`Elemento con ID no ${elementId} encontrado`);
@@ -656,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }));
 
     let elementId = organismo === "STC" ? "top10MetroStationsChart" : "top10MetrobusStationsChart";
-    let sistema = organismo === "STC" ? "Metro" : "Metrobús";
+    let sistema = sistemas[organismo];
     const chartElement = document.getElementById(elementId);
     if (!chartElement) {
         console.error(`Elemento con ID no ${elementId} encontrado`);
@@ -717,12 +729,12 @@ document.addEventListener('DOMContentLoaded', () => {
     chartElement.chart = chart;
   }
 
-  function createMetroMap(metro) {
+  function createMetroMap(metro, organismo = 'STC') {
     // Inicializa el mapa y establece la vista inicial
     // Colores de las líneas del metro
-
+    const sistema = sistemas[organismo];
     // Inicializa el mapa y establece la vista inicial
-    var map = L.map('map').setView([19.432608, -99.133209], 12);
+    var map = L.map(`map${sistema}`).setView([19.432608, -99.133209], 12);
 
     // Capa base de CartoDB Positron
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -730,14 +742,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(map);
 
     // Cargar y mostrar las líneas del metro
-    fetch('datos/lineas_metro.geojson')
+    fetch(`datos/lineas_${sistema.toLowerCase()}.geojson`)
     .then(response => response.json())
     .then(data => {
     L.geoJSON(data,
       {
     style: function (feature) {
       return {
-        color: metroLineColors[feature.properties.LINEA],
+        color: 'red',
         weight: 3
       };
     }
@@ -752,7 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {});
 
     // Cargar y mostrar las estaciones del metro
-    fetch('datos/estaciones_metro.geojson')
+    fetch(`datos/estaciones_${sistema.toLowerCase()}.geojson`)
     .then(response => response.json())
     .then(data => {
     L.geoJSON(data, {
