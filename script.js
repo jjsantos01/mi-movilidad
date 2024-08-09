@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
               createLineChart(viajes);
               createStackedBarChart(viajes);
               createBarChartByMomentoDia(viajes);
+              createHeatmap(viajes);
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
@@ -341,6 +342,52 @@ function getColorForOrganismo(organismo) {
             },
         }
     });
+  }
+
+  function createHeatmap(viajes) {
+    const heatmapData = viajes.reduce((acc, viaje) => {
+        const dayOfWeek = viaje.dayOfWeek;
+        const momentoDia = viaje.momento_dia;
+        const key = `${dayOfWeek}+${momentoDia}`;
+
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {});
+
+    const labelsX = ['Mañana', 'Tarde', 'Noche'];
+    const labelsY = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+    const zData = labelsY.map(day => {
+        return labelsX.map(momento => {
+            const key = `${day}+${momento}`;
+            return heatmapData[key] || 0;
+        });
+    });
+
+    const data = [{
+        z: zData,
+        x: labelsX,
+        y: labelsY,
+        type: 'heatmap',
+        colorscale: 'Blues',
+        reversescale: true,
+        hovertemplate: 'Momento del día: %{x}<br>Día de la semana: %{y}<br>Número de viajes: %{z}<extra></extra>'
+    }];
+
+    const layout = {
+        title: 'Viajes por día de la semana y momento',
+        xaxis: {
+            title: 'Momento del día'
+        },
+        yaxis: {
+            title: 'Día de la semana',
+            autorange: 'reversed' // Invertir el orden para que lunes esté en la parte superior
+        },
+        height: 400,
+        width: 500
+    };
+
+    Plotly.newPlot('heatmapChart', data, layout);
   }
 
 });
