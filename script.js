@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
               createPieChart(viajes);
               createLineChart(viajes);
               createStackedBarChart(viajes);
+              createBarChartByMomentoDia(viajes);
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
@@ -87,13 +88,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   }
 
+  function getMomentoDia(hora) {
+    if (hora <= 11) {
+        return "Mañana";
+    } else if (hora <= 18) {
+        return "Tarde";
+    } else {
+        return "Noche";
+    }
+  }
+
   function processViajes(data) {
     return data
         .filter(item => (item.operacion !== "71-FIN DE VIAJE") && (item.operacion !== "00-RECARGA"))
         .map(item => {
-            const date = new Date(item.fecha.split(' ')[0].split('-').reverse().join('-'));
+            const dateParts = item.fecha.split(' ');
+            const date = new Date(dateParts[0].split('-').reverse().join('-'));
+            const hora = parseInt(dateParts[1].split(':')[0]);
             const days = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
             item.dayOfWeek = days[date.getDay()]; // Calcula el día de la semana
+            item.momento_dia = getMomentoDia(hora); // Calcula el momento del día
             return item;
         });
   }
@@ -102,8 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
     "STC": 'rgba(255, 99, 132, 0.8)',
     "ECOBICI": 'rgba(54, 162, 235, 0.8)',
     "METROBÚS": 'rgba(255, 206, 86, 0.8)',
-    "Organismo4": 'rgba(75, 192, 192, 0.8)',
-    "Organismo5": 'rgba(153, 102, 255, 0.8)',
+    "Mañana": 'rgba(75, 192, 192, 0.8)',
+    "Tarde": 'rgba(153, 102, 255, 0.8)',
+    "Noche": 'rgba(22, 192, 67, 0.8)',
     // Añade más organismos y colores según sea necesario
   };
 
@@ -260,7 +275,7 @@ function getColorForOrganismo(organismo) {
                 },
                 title: {
                     display: true,
-                    text: 'Total de Viajes por Organismo y Día de la Semana'
+                    text: 'Total de viajes por sistema y día de la semana'
                 }
             },
             scales: {
@@ -275,8 +290,57 @@ function getColorForOrganismo(organismo) {
     });
   }
 
-  function randomColor() {
-      return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.8)`;
+  function createBarChartByMomentoDia(viajes) {
+    const momentoData = viajes.reduce((acc, viaje) => {
+        const organismo = viaje.organismo;
+        const momentoDia = viaje.momento_dia;
+        const key = `${organismo}+${momentoDia}`;
+
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {});
+
+    const organismos = [...new Set(viajes.map(v => v.organismo))];
+    const momentos = ['Mañana', 'Tarde', 'Noche'];
+    const dataValues = {};
+
+    organismos.forEach(organismo => {
+        momentos.forEach(momento => {
+            const key = `${organismo}+${momento}`;
+            if (!dataValues[organismo]) dataValues[organismo] = [];
+            dataValues[organismo].push(momentoData[key] || 0);
+        });
+    });
+
+    const datasets = momentos.map((momento, index) => {
+        return {
+            label: momento,
+            data: organismos.map(organismo => dataValues[organismo][index]),
+            backgroundColor: getColorForOrganismo(momento),
+        };
+    });
+
+    const ctx = document.getElementById('barChartMomentoDia').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: organismos,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Total de viajes por sistema y momento del día'
+                }
+            },
+        }
+    });
   }
 
 });
