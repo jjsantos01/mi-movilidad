@@ -6,7 +6,8 @@
     <title>Consulta de Tarjetas SEMOVI</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <!-- <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
 </head>
 <body>
     <div class="container">
@@ -21,11 +22,13 @@
           <canvas id="stackedBarChart"></canvas>
           <canvas id="barChartMomentoDia"></canvas>
           <label for="organismoSelector">Selecciona sistema:</label>
-          <select id="organismoSelector">
-            <option value="Todos">Todos</option>
-          </select>
-          <div id="heatmapChart"></div>
-
+          <div id="heatmapMomentoDia">
+            <select id="organismoSelector">
+              <option value="Todos">Todos</option>
+            </select>
+            <div id="heatmapChart"></div>
+          </div>
+          <canvas id="saldoFinalChart"></canvas>
         </div>
       </div>
       <div id="results">

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsTable = document.getElementById('resultsTable');
   const tableHeader = document.getElementById('tableHeader');
   const tableBody = document.getElementById('tableBody');
+  const prod = 0; // 0 para usar datos locales, 1 para usar API
   let pieChart;
 
   form.addEventListener('submit', async (e) => {
@@ -19,11 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
               createStackedBarChart(viajes);
               createBarChartByMomentoDia(viajes);
               populateOrganismoSelector(viajes);
-              createHeatmap(viajes);
-              document.getElementById('organismoSelector').addEventListener('change', function() {
-                const selectedOrganismo = this.value;
-                createHeatmap(viajes, selectedOrganismo);
-              });
+              // createHeatmap(viajes);
+              // document.getElementById('organismoSelector').addEventListener('change', function() {
+              //   const selectedOrganismo = this.value;
+              //   createHeatmap(viajes, selectedOrganismo);
+              // });
+              createSaldoFinalChart(data);
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
@@ -31,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
-  const prod = 0; // 0 para usar datos locales, 1 para usar API
 
   async function fetchData(serie) {
     if (prod) {
@@ -183,7 +184,6 @@ function getColorForOrganismo(organismo) {
         acc[key] = (acc[key] || 0) + 1;
         return acc;
     }, {});
-    console.log(organismoDates);
     const labels = [];
     const dataValues = {};
 
@@ -195,7 +195,6 @@ function getColorForOrganismo(organismo) {
         dataValues[organismo].push({ date: monthYear, value: organismoDates[key] });
     });
     labels.sort((a, b) => new Date(a) - new Date(b));
-    console.log(dataValues);
     const datasets = Object.keys(dataValues).map(organismo => {
         return {
             label: organismo,
@@ -207,7 +206,6 @@ function getColorForOrganismo(organismo) {
             borderColor: getColorForOrganismo(organismo),
         };
     });
-    console.log(datasets);
     const ctx = document.getElementById('lineChart').getContext('2d');
 
     if (lineChart) {
@@ -397,6 +395,97 @@ function getColorForOrganismo(organismo) {
     Plotly.newPlot('heatmapChart', data, layout);
   }
 
+  function createSaldoFinalChart(data) {
+    const filteredData = data.filter(item => {
+        const monto = parseFloat(item.monto);
+        return !isNaN(monto) && monto > 0;
+    });
+
+    const sortedData = filteredData.sort((a, b) => {
+        const dateA = parseDateTime(a.fecha);
+        const dateB = parseDateTime(b.fecha);
+        return dateA - dateB;
+    });
+
+    const dates = sortedData.map(item => parseDateTime(item.fecha));
+    const saldos = sortedData.map(item => {
+        const saldo = parseFloat(item.saldo_final);
+        return isNaN(saldo) ? null : saldo;
+    });
+
+    const ctx = document.getElementById('saldoFinalChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Saldo Final',
+                data: saldos,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Histórico de Saldo Final'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(context.parsed.y);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        displayFormats: {
+                            day: 'dd-MM-yyyy'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Fecha'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Saldo Final'
+                    },
+                    ticks: {
+                        callback: function(value, index, values) {
+                            return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+  }
+
+  function parseDateTime(dateTimeString) {
+      const [datePart, timePart] = dateTimeString.split(' ');
+      const [day, month, year] = datePart.split('-');
+      const [hour, minute, second] = timePart.split(':');
+      return new Date(year, month - 1, day, hour, minute, second);
+  }
 
   function populateOrganismoSelector(viajes) {
     const organismos = [...new Set(viajes.map(viaje => viaje.organismo))];
