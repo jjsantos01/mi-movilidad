@@ -38,6 +38,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
+  const metroLineColors = {
+    "1": '#F04E98',
+    "2": '#005EB8',
+    "3": '#AF9800',
+    "4": '#6BBBAE',
+    "5": '#FFD100',
+    "6": '#DA291C',
+    "7": '#E87722',
+    "8": '#009A44',
+    "9": '#512F2E',
+    "A": '#981D97',
+    "B": '#B1B3B3',
+    "12": '#B0A32A',
+  }
 
   async function fetchData(serie) {
     if (prod) {
@@ -531,8 +545,18 @@ function getColorForOrganismo(organismo) {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10);
 
+    console.log(top10Lines)
+
     const labels = top10Lines.map(([linea]) => linea);
     const data = top10Lines.map(([, count]) => count);
+    const colors = top10Lines.map(([linea]) => metroLineColors[linea] || '#000000'); // Color negro por defecto si no se encuentra
+
+    const formattedData = labels.map((label, index) => ({
+      x: label,
+      y: data[index],
+      fillColor: colors[index],      // Color de relleno para la barra
+      strokeColor: colors[index]     // Color del borde de la barra
+  }));
 
     const chartElement = document.getElementById('top10MetroLinesChart');
     if (!chartElement) {
@@ -545,7 +569,7 @@ function getColorForOrganismo(organismo) {
 
     const options = {
         series: [{
-            data: data
+            data: formattedData
         }],
         chart: {
             type: 'bar',
@@ -600,13 +624,28 @@ function getColorForOrganismo(organismo) {
         return acc;
     }, {});
 
+    const stationColors = metro.reduce((acc, viaje) => {
+        acc[viaje.estacion] = metroLineColors[viaje.linea] || '#000000'; // Color
+        return acc;
+    }
+    , {});
+
     // Convertir a array, ordenar y tomar los top 10
     const top10Stations = Object.entries(stationCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10);
 
-    const labels = top10Stations.map(([linea]) => linea);
+    const labels = top10Stations.map(([station]) => station);
     const data = top10Stations.map(([, count]) => count);
+    const colors = top10Stations.map(([station]) => stationColors[station] || '#000000'); // Color
+
+    const formattedData = labels.map((label, index) => ({
+      x: label,
+      y: data[index],
+      fillColor: colors[index],      // Color de relleno para la barra
+      strokeColor: colors[index]     // Color del borde de la barra
+  }));
+
 
     const chartElement = document.getElementById('top10MetroStationsChart');
     if (!chartElement) {
@@ -619,7 +658,7 @@ function getColorForOrganismo(organismo) {
 
     const options = {
         series: [{
-            data: data
+            data: formattedData
         }],
         chart: {
             type: 'bar',
@@ -670,20 +709,6 @@ function getColorForOrganismo(organismo) {
   function createMetroMap(metro) {
     // Inicializa el mapa y establece la vista inicial
     // Colores de las líneas del metro
-    var metroLineColors = {
-      "1": '#F04E98',
-      "2": '#005EB8',
-      "3": '#AF9800',
-      "4": '#6BBBAE',
-      "5": '#FFD100',
-      "6": '#DA291C',
-      "7": '#E87722',
-      "8": '#009A44',
-      "9": '#512F2E',
-      "A": '#981D97',
-      "B": '#B1B3B3',
-      "12": '#B0A32A',
-    }
 
     // Inicializa el mapa y establece la vista inicial
     var map = L.map('map').setView([19.432608, -99.133209], 12);
