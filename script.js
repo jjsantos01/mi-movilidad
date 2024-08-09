@@ -20,11 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
               createStackedBarChart(viajes);
               createBarChartByMomentoDia(viajes);
               populateOrganismoSelector(viajes);
-              // createHeatmap(viajes);
-              // document.getElementById('organismoSelector').addEventListener('change', function() {
-              //   const selectedOrganismo = this.value;
-              //   createHeatmap(viajes, selectedOrganismo);
-              // });
+              createHeatmap(viajes);
+              document.getElementById('organismoSelector').addEventListener('change', function() {
+                const selectedOrganismo = this.value;
+                createHeatmap(viajes, selectedOrganismo);
+              });
               createSaldoFinalChart(data);
           } catch (error) {
               console.error('Error:', error);
@@ -348,51 +348,61 @@ function getColorForOrganismo(organismo) {
   }
 
   function createHeatmap(viajes, selectedOrganismo = 'Todos') {
+    const heatmapElement = document.getElementById('heatmapChart');
+    if (!heatmapElement) {
+        console.error('Elemento con ID "heatmapChart" no encontrado');
+        return;
+    }
+
+    // Limpiar el contenido existente
+    heatmapElement.innerHTML = '';
+
     const filteredViajes = selectedOrganismo === 'Todos' ? viajes : viajes.filter(viaje => viaje.organismo === selectedOrganismo);
 
-    const heatmapData = filteredViajes.reduce((acc, viaje) => {
-        const dayOfWeek = viaje.dayOfWeek;
-        const momentoDia = viaje.momento_dia;
-        const key = `${dayOfWeek}+${momentoDia}`;
+    const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+    const momentosDia = ['Mañana', 'Tarde', 'Noche'];
 
-        acc[key] = (acc[key] || 0) + 1;
-        return acc;
-    }, {});
-
-    const labelsX = ['Mañana', 'Tarde', 'Noche'];
-    const labelsY = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-
-    const zData = labelsY.map(day => {
-        return labelsX.map(momento => {
-            const key = `${day}+${momento}`;
-            return heatmapData[key] || 0;
+    const data = diasSemana.map(dia => {
+        return momentosDia.map(momento => {
+            const count = filteredViajes.filter(viaje => viaje.dayOfWeek === dia && viaje.momento_dia === momento).length;
+            return {
+                x: momento,
+                y: count,
+                dia: dia,
+            };
         });
-    });
+    }).flat();
+    console.log(data);
 
-    const data = [{
-        z: zData,
-        x: labelsX,
-        y: labelsY,
-        type: 'heatmap',
-        colorscale: 'Blues',
-        reversescale: true,
-        hovertemplate: 'Momento del día: %{x}<br>Día de la semana: %{y}<br>Número de viajes: %{z}<extra></extra>'
-    }];
-
-    const layout = {
-        title: 'Viajes por día de la semana y momento',
+    const options = {
+        series: diasSemana.map(dia => ({
+            name: dia,
+            data: data.filter(item => item.dia === dia)
+        })),
+        chart: {
+            height: 350,
+            type: 'heatmap',
+        },
+        dataLabels: {
+            enabled: false
+        },
+        colors: ["#008FFB"],
+        title: {
+            text: 'Viajes por día de la semana y momento'
+        },
         xaxis: {
-            title: 'Momento del día'
+            categories: momentosDia
         },
         yaxis: {
-            title: 'Día de la semana',
-            autorange: 'reversed' // Invertir el orden para que lunes esté en la parte superior
-        },
-        height: 400,
-        width: 500
+            categories: diasSemana.reverse()
+        }
     };
+    console.log(options);
+    const chart = new ApexCharts(heatmapElement, options);
+    chart.render();
 
-    Plotly.newPlot('heatmapChart', data, layout);
+    // Guardar la instancia del gráfico para poder actualizarla o destruirla más tarde si es necesario
+    heatmapElement.chart = chart;
   }
 
   function createSaldoFinalChart(data) {
