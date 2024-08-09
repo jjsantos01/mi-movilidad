@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsTable = document.getElementById('resultsTable');
   const tableHeader = document.getElementById('tableHeader');
   const tableBody = document.getElementById('tableBody');
-  const prod = 0; // 0 para usar datos locales, 1 para usar API
+  const prod = 1  ; // 0 para usar datos locales, 1 para usar API
   let pieChart;
 
   form.addEventListener('submit', async (e) => {
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
               const data = await fetchData(serie);
               const viajes = processViajes(data);
-              displayResults(viajes);
+              displayResults(data);
               createPieChart(viajes);
               createLineChart(viajes);
               createStackedBarChart(viajes);
@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
               });
               tableBody.appendChild(tr);
           });
+          new DataTable('#resultsTable')
       } else {
           resultsTable.style.display = 'none';
           alert('No se encontraron resultados para el número de serie proporcionado.');
