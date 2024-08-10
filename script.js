@@ -4,8 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsTable = document.getElementById('resultsTable');
   const tableHeader = document.getElementById('tableHeader');
   const tableBody = document.getElementById('tableBody');
-  const prod = 1  ; // 0 para usar datos locales, 1 para usar API
+  const prod = 0  ; // 0 para usar datos locales, 1 para usar API
   let pieChart;
+  window.mapInstances = {};
 
   form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -106,18 +107,28 @@ document.addEventListener('DOMContentLoaded', () => {
   function setupCollapsibleSections() {
     const sections = document.querySelectorAll('.collapsible-section h2');
     sections.forEach(section => {
-      section.addEventListener('click', () => {
-        section.classList.toggle('active');
-        const content = section.nextElementSibling;
-        content.classList.toggle('active');
-        if (content.classList.contains('active')) {
-          content.style.display = 'block';
-        } else {
-          content.style.display = 'none';
-        }
-      });
-     });
-    }
+        section.addEventListener('click', () => {
+            section.classList.toggle('active');
+            const content = section.nextElementSibling;
+            content.classList.toggle('active');
+            if (content.classList.contains('active')) {
+                content.style.display = 'block';
+                setTimeout(() => {
+                    // Busca todos los contenedores de mapas en este contenido
+                    const mapContainers = content.querySelectorAll('[id^="map"]');
+                    mapContainers.forEach(mapContainer => {
+                        const mapId = mapContainer.id;
+                        if (window.mapInstances[mapId]) {
+                            window.mapInstances[mapId].invalidateSize();
+                        }
+                    });
+                }, 100);
+            } else {
+                content.style.display = 'none';
+            }
+        });
+    });
+  }
 
   function displayResults(data) {
       if (data && data.length > 0) {
@@ -729,17 +740,33 @@ document.addEventListener('DOMContentLoaded', () => {
     chartElement.chart = chart;
   }
 
+  function initializeMap(sistema, lat, lng, zoom) {
+    const mapId = `map${sistema}`;
+    const map = L.map(mapId).setView([lat, lng], zoom);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
+      }).addTo(map);
+
+    window.mapInstances[mapId] = map;
+  }
+
+  function hoverPopup(layer) {
+    layer.on('mouseover', function (e) {
+      this.openPopup();
+    });
+    layer.on('mouseout', function (e) {
+      this.closePopup();
+    });
+  }
+
   function createMetroMap(metro, organismo = 'STC') {
     // Inicializa el mapa y establece la vista inicial
     // Colores de las líneas del metro
     const sistema = sistemas[organismo];
     // Inicializa el mapa y establece la vista inicial
-    var map = L.map(`map${sistema}`).setView([19.432608, -99.133209], 12);
 
-    // Capa base de CartoDB Positron
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
-    }).addTo(map);
+    initializeMap(sistema, 19.432608, -99.133209, 12);
 
     // Cargar y mostrar las líneas del metro
     fetch(`datos/lineas_${sistema.toLowerCase()}.geojson`)
@@ -749,11 +776,17 @@ document.addEventListener('DOMContentLoaded', () => {
       {
     style: function (feature) {
       return {
-        color: 'red',
+        color: metroLineColors[feature.properties.LINEA] || "red",
         weight: 3
       };
+    },
+    onEachFeature: function(feature, layer) {
+      if (feature.properties && feature.properties.LINEA) {
+        layer.bindPopup(`Línea ${feature.properties.LINEA}: ${feature.properties.RUTA}`);
+        hoverPopup(layer);
+      }
     }
-    }).addTo(map);
+    }).addTo(window.mapInstances[`map${sistema}`]);
     })
     .catch(error => console.error('Error al cargar las líneas del metro:', error));
 
@@ -768,19 +801,24 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(response => response.json())
     .then(data => {
     L.geoJSON(data, {
-    pointToLayer: function (feature, latlng) {
-    var nombreEstacion = feature.properties.NOMBRE.toLowerCase();
-    var numViajes = viajesEstaciones[nombreEstacion] || 0;
-    if (numViajes > 0) {
-    return L.circleMarker(latlng, {
-      radius: Math.min(numViajes, 20),  // Ajustar el factor de escala según sea necesario
-      color: "blue",
-      fillColor: "blue",
-      fillOpacity: 0.8
-    }).bindPopup("<strong>" + feature.properties.NOMBRE + "</strong><br>Viajes: " + numViajes);
+      pointToLayer: function (feature, latlng) {
+      var nombreEstacion = feature.properties.NOMBRE.toLowerCase();
+      var numViajes = viajesEstaciones[nombreEstacion] || 0;
+      if (numViajes > 0) {
+      return L.circleMarker(latlng, {
+        radius: Math.min(numViajes, 20),  // Ajustar el factor de escala según sea necesario
+        color: "blue",
+        fillColor: "blue",
+        fillOpacity: 0.8
+      }).bindPopup("<strong>" + feature.properties.NOMBRE + "</strong><br>Viajes: " + numViajes);
     }
+    },
+    onEachFeature: function(feature, layer) {
+      if (feature.properties && feature.properties.LINEA) {
+        hoverPopup(layer);
+      }
     }
-    }).addTo(map);
+    }).addTo(window.mapInstances[`map${sistema}`]);
     })
     .catch(error => console.error('Error al cargar las estaciones del metro:', error));
   }
