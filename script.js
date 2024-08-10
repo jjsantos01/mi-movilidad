@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
               createTop10MetroLinesChart(metrobus, 'METROBÚS');
               createTop10MetroStationsChart(metrobus, 'METROBÚS');
               createMetroMap(metrobus, 'METROBÚS');
+              createEcobiciHeatmap(data);
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
@@ -102,6 +103,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function createMetroObject(viajes, selectedOrganismo = 'STC') {
     return viajes.filter(viaje => viaje.organismo === selectedOrganismo);
+  }
+
+  function getEcobiciOD(data) {
+    const ecobici = data.filter(d => d.organismo === 'ECOBICI');
+    const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
+    const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
+
+    // Crear un mapa de viajes
+    const viajesMap = new Map();
+    inicioViaje.forEach(inicio => {
+        const fin = finViaje.find(f => f.numero === inicio.numero - 1);
+        if (fin) {
+            const key = `${inicio.estacion}+${fin.estacion}`;
+            viajesMap.set(key, (viajesMap.get(key) || 0) + 1);
+        }
+    });
+
+    // Convertir el mapa a un array de objetos para ApexCharts
+    return Array.from(viajesMap, ([key, value]) => {
+        const [inicio, fin] = key.split('+');
+        return { x: inicio, y: fin, value: value };
+    });
   }
 
   function setupCollapsibleSections() {
@@ -459,7 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'heatmap',
         },
         dataLabels: {
-            enabled: false
+            enabled: true,
         },
         colors: ["#008FFB"],
         title: {
@@ -821,6 +844,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(window.mapInstances[`map${sistema}`]);
     })
     .catch(error => console.error('Error al cargar las estaciones del metro:', error));
+  }
+
+  function createEcobiciHeatmap(data) {
+    // Procesar los datos
+    const processedData = getEcobiciOD(data);
+    // Obtener estaciones únicas
+    const estaciones = [...new Set([...processedData.map(d => d.x), ...processedData.map(d => d.y)])];
+
+    function convertDataToHeatmapSeries(data, estaciones) {
+      // Crear un objeto para contar los viajes totales por estación
+      const viajeCounts = {};
+
+      // Contar los viajes para cada estación de inicio y fin
+      data.forEach(({ x: origen, y: destino, value }) => {
+          viajeCounts[origen] = (viajeCounts[origen] || 0) + value;
+          viajeCounts[destino] = (viajeCounts[destino] || 0) + value;
+      });
+
+      // Filtrar las estaciones que tienen al menos 2 viajes en total
+      const estacionesFiltradas = estaciones.filter(estacion => viajeCounts[estacion] >= 2);
+
+      // Crear un objeto para mapear las estaciones y sus valores
+      const seriesMap = {};
+
+      // Inicializar las series para cada estación de origen filtrada
+      estacionesFiltradas.forEach(origen => {
+          seriesMap[origen] = {
+              name: origen, // El nombre de la serie será la estación de origen
+              data: []
+          };
+      });
+
+      // Añadir datos al mapa
+      data.forEach(({ x: origen, y: destino, value }) => {
+          if (seriesMap[origen] && estacionesFiltradas.includes(destino)) {
+              seriesMap[origen].data.push({ x: destino, y: value });
+          }
+      });
+
+      // Ordenar los datos de cada serie de acuerdo al orden de `estacionesFiltradas`
+      estacionesFiltradas.forEach(origen => {
+          seriesMap[origen].data.sort((a, b) => estacionesFiltradas.indexOf(a.x) - estacionesFiltradas.indexOf(b.x));
+      });
+
+      // Rellenar los destinos faltantes con valor 0 y ordenar de nuevo
+      estacionesFiltradas.forEach(origen => {
+          estacionesFiltradas.forEach(destino => {
+              if (!seriesMap[origen].data.some(item => item.x === destino)) {
+                  seriesMap[origen].data.push({ x: destino, y: 0 });
+              }
+          });
+          seriesMap[origen].data.sort((a, b) => estacionesFiltradas.indexOf(a.x) - estacionesFiltradas.indexOf(b.x));
+      });
+
+      // Convertir el objeto en un array de series
+      return Object.values(seriesMap);
+  }
+
+    const seriesMap = convertDataToHeatmapSeries(processedData, estaciones);
+    const estacionesFiltradas = seriesMap.map(s => s.name);
+
+    // Configurar y crear el gráfico
+    const options = {
+        series: seriesMap,
+        chart: {
+            type: 'heatmap',
+            height: 350
+        },
+        dataLabels: {
+            enabled: true,
+        },
+        colors: ["#008FFB"],
+        title: {
+            text: 'Rutas de Ecobici más populares'
+        },
+        xaxis: {
+            categories: estacionesFiltradas,
+            labels: {
+                rotate: -45,
+                rotateAlways: true,
+                maxHeight: 60
+            }
+        },
+        yaxis: {
+            categories: estacionesFiltradas
+        }
+    };
+
+    const chart = new ApexCharts(document.querySelector("#ecobiciHeatmap"), options);
+    chart.render();
+
   }
 
   function parseDateTime(dateTimeString) {
