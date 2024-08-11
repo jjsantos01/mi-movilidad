@@ -20,10 +20,10 @@
     <div class="container">
         <h1>Tus viajes con tarjeta MI</h1>
         <form id="searchForm">
-            <input type="text" id="serieInput" placeholder="Ingrese el número de tarjeta, por ejemplo C33XXXXX" value="0">
+            <input type="text" id="serieInput" placeholder="Ingrese el número de tarjeta, por ejemplo C33XXXXX" required>
             <button type="submit">Buscar</button>
         </form>
-        <div id="statsContainer">
+        <div id="statsContainer" class="section">
           <div class="stat-box">
               <h3>Total de Viajes</h3>
               <p id="totalViajes">Cargando...</p>
@@ -33,7 +33,7 @@
               <p id="totalRecargas">Cargando...</p>
           </div>
         </div>
-        <div id="chartContainer">
+        <div id="chartContainer" class="section">
           <div class="chart-row">
             <div class="chart-item full-width">
                 <div id="pieChart"></div>
@@ -54,23 +54,22 @@
                   <div id="barChartMomentoDia"></div>
               </div>
             </div>
-        </div>
-        <div id="heatmapMomentoDia" class="chart-row">
-            <div class="chart-item full-width">
-              <label for="organismoSelector">Selecciona sistema:</label>
-              <select id="organismoSelector">
-                <option value="Todos">Todos</option>
-              </select>
-              <div id="heatmapChart"></div>
+            <div id="heatmapMomentoDia" class="chart-row">
+              <div class="chart-item full-width">
+                <label for="organismoSelector">Selecciona sistema:</label>
+                <select id="organismoSelector">
+                  <option value="Todos">Todos</option>
+                </select>
+                <div id="heatmapChart"></div>
+              </div>
             </div>
-        </div>
-        <div class="chart-row">
-            <div class="chart-item full-width">
+            <div class="chart-row">
+              <div class="chart-item full-width">
                 <div id="saldoFinalChart"></div>
+              </div>
             </div>
-          </div>
-
-        <div id="metroSection" class="collapsible-section">
+        </div>
+        <div id="metroSection" class="collapsible-section section">
           <h2>Viajes en Metro</h2>
           <div class="section-content">
               <div id="top10MetroLinesChart" class="chart-container"></div>
@@ -78,7 +77,7 @@
               <div id="mapMetro" class="map-container"></div>
           </div>
         </div>
-        <div id="metrobusSection" class="collapsible-section">
+        <div id="metrobusSection" class="collapsible-section section">
           <h2>Viajes en Metrobús</h2>
           <div class="section-content">
               <div id="top10MetrobusLinesChart" class="chart-container"></div>
@@ -86,15 +85,15 @@
               <div id="mapMetrobús" class="map-container"></div>
           </div>
         </div>
-        <div id="ecobiciSection" class="collapsible-section">
+        <div id="ecobiciSection" class="collapsible-section section">
           <h2>Viajes en Ecobici</h2>
           <div class="section-content">
               <div id="ecobici-viajes" class="chart-container"></div>
               <div id="ecobici-tiempo" class="chart-container"></div>
           </div>
         </div>
-        <div id="results">
-          <h2>Explora los datos</h2>
+        <div id="results" class="section">
+          <h2>Explora los registros completos</h2>
           <button id="downloadCSV" class="btn btn-primary">Descargar CSV</button>
           <button id="downloadJSON" class="btn btn-primary">Descargar JSON</button>
             <table id="resultsTable">

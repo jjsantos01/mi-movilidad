@@ -114,7 +114,6 @@ tr:hover {
 }
 
 #statsContainer {
-  display: flex;
   justify-content: space-around;
   margin-bottom: 20px;
 }
@@ -203,20 +202,15 @@ tr:hover {
   }
 }
 
-.pie-chart-row {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-bottom: 20px;
+/* Ocultar secciones inicialmente */
+.section {
+    display: none;
 }
 
-.pie-chart-container {
-  width: 70%;
-  max-width: 800px; /* Ajusta esto según tus necesidades */
-  height: 400px; /* Ajusta la altura según tus necesidades */
-}
-
-.pie-chart-container canvas {
-  width: 100% !important;
-  height: 100% !important;
+/* Estilo para el mensaje de carga */
+#loadingMessage {
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 20px;
 }
