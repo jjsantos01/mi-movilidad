@@ -6,6 +6,8 @@ El objetivo de este sitio es proporcionar una visualización accesible y compren
 
 Puede ser consultado en [gh.jjsantoso.com/mi-movilidad/](https://gh.jjsantoso.com/mi-movilidad/)
 
+Casi la totalidad del código de este proyecto fue generada usando modelos de inteligencia artificial como [Claude](https://claude.ai/chat), [chatGPT4](https://chat.openai.com/), [Copilot](https://github.com/features/copilot) y [Gemini](https://gemini.google.com/).
+
 ## ¿Cómo funciona?
 
 El sitio web toma la información directamente desde la página pública oficial de SEMOVI (https://app.semovi.cdmx.gob.mx/MI_movilidad/trazabilidad) y la presenta de manera visual e interactiva. Todo el procesamiento de datos se realiza localmente en el navegador del usuario, lo que asegura que no se recopile ni almacene ninguna información personal.
