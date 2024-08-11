@@ -4,6 +4,8 @@ Este proyecto es una página web para visualizar los datos de los viajes realiza
 
 El objetivo de este sitio es proporcionar una visualización accesible y comprensible de los datos de viajes en transporte público en la Ciudad de México, utilizando la tarjeta de movilidad. Este proyecto es de naturaleza personal y no tiene fines de lucro.
 
+Puede ser consultado en [gh.jjsantoso.com/mi-movilidad/](https://gh.jjsantoso.com/mi-movilidad/)
+
 ## ¿Cómo funciona?
 
 El sitio web toma la información directamente desde la página pública oficial de SEMOVI (https://app.semovi.cdmx.gob.mx/MI_movilidad/trazabilidad) y la presenta de manera visual e interactiva. Todo el procesamiento de datos se realiza localmente en el navegador del usuario, lo que asegura que no se recopile ni almacene ninguna información personal.
