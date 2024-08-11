@@ -59,15 +59,6 @@ function setupCollapsibleSections() {
   });
 }
 
-function destroyAllCharts(charts) {
-  charts.forEach(chart => {
-    if (chart) {
-      chart.destroy();
-      console.log('Chart destroyed:', chart);
-    }
-  });
-}
-
 function displayResults(data) {
     const resultsTable = document.getElementById('resultsTable');
 
@@ -123,57 +114,75 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       data = [];
       showLoadingMessage();
-      destroyAllCharts(charts);
       const serie = serieInput.value.trim();
       if (serie) {
           try {
               data = await fetchData(serie);
-              const viajes = processViajes(data);
-              const metro = createMetroObject(viajes, 'STC');
-              const metrobus = createMetroObject(viajes, 'METROBÚS');
-              const ecobici = data.filter(d => d.organismo === 'ECOBICI');
-              const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
-              const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
-              showAllSections();
-              getTotalViajes(viajes)
-              getTotalRecargas(data);
-              displayResults(data);
-              createPieChart(viajes);
-              createLineChart(viajes);
-              createStackedBarChart(viajes);
-              createBarChartByMomentoDia(viajes);
-              populateOrganismoSelector(viajes);
-              createHeatmap(viajes);
-              document.getElementById('organismoSelector').addEventListener('change', function() {
-                const selectedOrganismo = this.value;
-                createHeatmap(viajes, selectedOrganismo);
-              });
-              createSaldoFinalChart(data);
-              // Metro
-              if (metro.length > 0) {
-                createTop10MetroLinesChart(metro, 'STC');
-                createTop10MetroStationsChart(metro, 'STC');
-                createMetroMap(metro);
-              }
-              // Metrobús
-              if (metrobus.length > 0) {
-                createTop10MetroLinesChart(metrobus, 'METROBÚS');
-                createTop10MetroStationsChart(metrobus, 'METROBÚS');
-                createMetroMap(metrobus, 'METROBÚS');
-              }
-              // Ecobici
-              if (ecobici.length > 0) {
-                createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes');
-                createEcobiciHeatmap(inicioViaje, finViaje, tipo='tiempo');
-              }
-              // resize
-              resizeAllCharts();
+              updateSectionContents(data);
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
+              document.getElementById('loadingMessage').remove();
           }
       }
   });
+
+  function updateSectionContents(data) {
+    const viajes = processViajes(data);
+    const metro = createMetroObject(viajes, 'STC');
+    const metrobus = createMetroObject(viajes, 'METROBÚS');
+    const ecobici = data.filter(d => d.organismo === 'ECOBICI');
+    const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
+    const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
+    showAllSections();
+    // Actualizar gráficos y estadísticas generales
+    getTotalViajes(viajes);
+    getTotalRecargas(data);
+    createPieChart(viajes);
+    createLineChart(viajes);
+    createStackedBarChart(viajes);
+    createBarChartByMomentoDia(viajes);
+    populateOrganismoSelector(viajes);
+    createHeatmap(viajes);
+    document.getElementById('organismoSelector').addEventListener('change', function() {
+      const selectedOrganismo = this.value;
+      createHeatmap(viajes, selectedOrganismo);
+    });
+    createSaldoFinalChart(data);
+    // Actualizar y mostrar/ocultar secciones según corresponda
+    updateSection('metroSection', metro, updateMetroSection);
+    updateSection('metrobusSection', metrobus, updateMetrobusSection);
+    updateSection('ecobiciSection', ecobici, () => updateEcobiciSection(inicioViaje, finViaje));
+    displayResults(data);
+  }
+
+  function updateSection(sectionId, data, updateFunction) {
+    const section = document.getElementById(sectionId);
+    if (data && data.length > 0) {
+        updateFunction(data);
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+    }
+  }
+
+  function updateMetroSection(metro) {
+    createTop10MetroLinesChart(metro, 'STC');
+    createTop10MetroStationsChart(metro, 'STC');
+    createMetroMap(metro);
+  }
+
+  function updateMetrobusSection(metrobus) {
+    createTop10MetroLinesChart(metrobus, 'METROBÚS');
+    createTop10MetroStationsChart(metrobus, 'METROBÚS');
+    createMetroMap(metrobus, 'METROBÚS');
+  }
+
+  function updateEcobiciSection(inicioViaje, finViaje) {
+    createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes');
+    createEcobiciHeatmap(inicioViaje, finViaje, tipo='tiempo');
+  }
+
 
   const sistemas = {
     "STC": "Metro",
