@@ -15,14 +15,27 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
     <div class="container">
         <h1>Tus viajes con tarjeta MI</h1>
         <form id="searchForm">
-            <input type="text" id="serieInput" placeholder="Ingrese el número de tarjeta, por ejemplo C33XXXXX" required>
-            <button type="submit">Buscar</button>
+          <input type="text" id="serieInput" placeholder="Ingrese el número de tarjeta, por ejemplo C33XXXXX" required>
+          <label for="yearSelect">Año:</label>
+          <select id="yearSelect">
+              <option value="2020">2020</option>
+              <option value="2021">2021</option>
+              <option value="2022">2022</option>
+              <option value="2023">2023</option>
+              <option value="2024" selected>2024</option>
+          </select>
+          <i class="fas fa-info-circle info-icon" id="yearInfo"></i>
+          <button type="submit">Buscar</button>
         </form>
+        <div id="infoPopup" class="popup">
+          La página se hizo usando los datos de 2024. Otros años pueden funcionar, pero podrían generar errores.
+        </div>
         <div id="statsContainer" class="section">
           <div class="stat-box">
               <h3>Total de Viajes</h3>

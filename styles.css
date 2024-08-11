@@ -5,32 +5,27 @@ body {
   padding: 0;
   background-color: #f4f4f4;
 }
-
 .container {
   width: 80%;
   margin: auto;
   overflow: hidden;
   padding: 20px;
 }
-
 h1 {
   color: #333;
   text-align: center;
 }
-
 form {
   background: #fff;
   padding: 20px;
   margin-bottom: 20px;
   border-radius: 5px;
 }
-
 input[type="text"] {
   width: 70%;
   padding: 10px;
   margin-right: 10px;
 }
-
 button {
   padding: 10px 15px;
   background: #333;
@@ -38,86 +33,97 @@ button {
   border: none;
   cursor: pointer;
 }
-
 button:hover {
   background: #555;
 }
-
+#searchForm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#searchForm label {
+  white-space: nowrap;
+}
+#serieInput {
+  flex-grow: 1;
+}
+#yearSelect {
+  width: auto;
+}
+.info-icon {
+  cursor: pointer;
+  color: #007bff;
+}
+.popup {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 1000;
+}
 table {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
   margin-bottom: 20px;
 }
-
 th, td {
   padding: 10px;
   border: 1px solid #ddd;
   text-align: left;
 }
-
 th {
   background-color: #f2f2f2;
   font-weight: bold;
 }
-
 tr:nth-child(even) {
   background-color: #f9f9f9;
 }
-
 tr:hover {
   background-color: #f5f5f5;
 }
-
 #chartContainer {
   background: #fff;
   padding: 20px;
   border-radius: 5px;
   margin-top: 20px;
 }
-
 .collapsible-section {
   background-color: #fff;
   margin-top: 20px;
   border-radius: 5px;
   overflow: hidden;
 }
-
 .collapsible-section h2 {
   background-color: #f2f2f2;
   padding: 10px 15px;
   margin: 0;
   cursor: pointer;
 }
-
 .collapsible-section h2::after {
   content: '\25BC';
   float: right;
 }
-
 .collapsible-section h2.active::after {
   content: '\25B2';
 }
-
 .section-content {
   padding: 20px;
   display: none;
 }
-
 .section-content.active {
   display: block;
 }
-
 .map-container {
   height: 600px;
   width: 100%;
 }
-
 #statsContainer {
   justify-content: space-around;
   margin-bottom: 20px;
 }
-
 .stat-box {
   background-color: #fff;
   border-radius: 5px;
@@ -126,32 +132,27 @@ tr:hover {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   width: 45%;
 }
-
 .stat-box h3 {
   margin-top: 0;
   color: #333;
 }
-
 .stat-box p {
   font-size: 1.5em;
   font-weight: bold;
   color: #007bff;
   margin-bottom: 0;
 }
-
 #chartContainer {
   background: #fff;
   padding: 20px;
   border-radius: 5px;
   margin-top: 20px;
 }
-
 .chart-row {
   display: flex;
   justify-content: space-between;
   margin-bottom: 20px;
 }
-
 .chart-item {
   width: 48%; /* Ajusta este valor según necesites */
   background-color: #f9f9f9;
@@ -161,52 +162,43 @@ tr:hover {
   box-sizing: border-box;
   position: relative; /* Añadido para posicionamiento del canvas */
 }
-
 .full-width {
   width: 100%;
 }
-
 /* Estilos para los canvas */
 .chart-item canvas {
   width: 100% !important;
   height: auto !important;
   max-height: 300px; /* Ajusta según necesites */
 }
-
 /* Responsive design */
 @media (max-width: 768px) {
   .chart-row {
       flex-direction: column;
   }
-
 .chart-item {
       width: 100%;
       margin-bottom: 20px;
   }
 }
-
 .section-content {
   padding: 20px;
 }
-
 .chart-container {
   width: 100%;
   height: 300px; /* Ajusta esta altura según tus necesidades */
   margin-bottom: 20px;
 }
-
 /* Responsive design */
 @media (max-width: 768px) {
   .chart-container, .map-container {
       height: 250px; /* Altura reducida para pantallas más pequeñas */
   }
 }
-
 /* Ocultar secciones inicialmente */
 .section {
     display: none;
 }
-
 /* Estilo para el mensaje de carga */
 #loadingMessage {
     font-size: 1.5em;

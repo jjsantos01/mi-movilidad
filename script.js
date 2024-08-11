@@ -1,5 +1,4 @@
 const prod = 1  ; // 0 para usar datos locales, 1 para usar API
-const anio = '2024';
 let data = [];
 let serieInput;
 let pieChart;
@@ -53,6 +52,97 @@ const sistemas = {
   "STE": "STE",
   "RTP": "RTP"
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('searchForm');
+  serieInput = document.getElementById('serieInput');
+  window.mapInstances = {};
+  setupCollapsibleSections();
+
+  form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      data = [];
+      showLoadingMessage();
+      const serie = serieInput.value.trim();
+      const anio = document.getElementById('yearSelect').value;
+      if (serie) {
+          try {
+              data = await fetchData(serie, anio);
+              updateSectionContents(data);
+          } catch (error) {
+              console.error('Error:', error);
+              alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
+              document.getElementById('loadingMessage').remove();
+          }
+      }
+  });
+
+  const infoIcon = document.getElementById('yearInfo');
+  const popup = document.getElementById('infoPopup');
+
+  infoIcon.addEventListener('click', function(e) {
+      e.preventDefault();
+      popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+      popup.style.top = (e.clientY + 10) + 'px';
+      popup.style.left = (e.clientX + 10) + 'px';
+  });
+
+  document.addEventListener('click', function(e) {
+      if (e.target !== infoIcon && !popup.contains(e.target)) {
+          popup.style.display = 'none';
+      }
+  });
+});
+
+document.getElementById('downloadCSV').addEventListener('click', function() {
+  // Convierte los datos a CSV
+  const csv = convertDataToCSV(data);
+
+  // Crear un Blob con el contenido CSV
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+  // Crear un enlace para la descarga
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", `datos-MI-${serieInput.value.trim()}.csv`);
+  link.style.visibility = 'hidden';
+
+  // Añadir el enlace al documento y simular un clic
+  document.body.appendChild(link);
+  link.click();
+
+  // Eliminar el enlace del documento
+  document.body.removeChild(link);
+
+  function convertDataToCSV(data) {
+    const header = Object.keys(data[0]).join(","); // Encabezado con los nombres de las claves
+    const rows = data.map(row => Object.values(row).join(",")); // Filas con los valores
+    return [header, ...rows].join("\n"); // Une encabezado y filas con saltos de línea
+  }
+});
+
+document.getElementById('downloadJSON').addEventListener('click', function() {
+    // Convertir el objeto data a una cadena JSON
+    const json = JSON.stringify(data, null, 2); // El parámetro '2' es para formatear el JSON con indentación
+
+    // Crear un Blob con el contenido JSON
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+
+    // Crear un enlace para la descarga
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `datos-MI-${serieInput.value.trim()}.json`);
+    link.style.visibility = 'hidden';
+
+    // Añadir el enlace al documento y simular un clic
+    document.body.appendChild(link);
+    link.click();
+
+    // Eliminar el enlace del documento
+    document.body.removeChild(link);
+});
 
 function setupCollapsibleSections() {
   const sections = document.querySelectorAll('.collapsible-section h2');
@@ -201,7 +291,7 @@ function showAllSections() {
     document.getElementById('loadingMessage').remove();
 }
 
-async function fetchData(serie) {
+async function fetchData(serie, anio) {
   if (prod) {
       const response = await fetch('https://app.semovi.cdmx.gob.mx/micrositio/291-trazabilidad_tarjetas.php', {
           method: 'POST',
@@ -1169,77 +1259,3 @@ function populateOrganismoSelector(viajes) {
       selector.add(option);
   });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('searchForm');
-  serieInput = document.getElementById('serieInput');
-  window.mapInstances = {};
-  setupCollapsibleSections();
-
-  form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      data = [];
-      showLoadingMessage();
-      const serie = serieInput.value.trim();
-      if (serie) {
-          try {
-              data = await fetchData(serie);
-              updateSectionContents(data);
-          } catch (error) {
-              console.error('Error:', error);
-              alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
-              document.getElementById('loadingMessage').remove();
-          }
-      }
-  });
-});
-
-document.getElementById('downloadCSV').addEventListener('click', function() {
-  // Convierte los datos a CSV
-  const csv = convertDataToCSV(data);
-
-  // Crear un Blob con el contenido CSV
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-
-  // Crear un enlace para la descarga
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
-  link.setAttribute("download", `datos-MI-${serieInput.value.trim()}.csv`);
-  link.style.visibility = 'hidden';
-
-  // Añadir el enlace al documento y simular un clic
-  document.body.appendChild(link);
-  link.click();
-
-  // Eliminar el enlace del documento
-  document.body.removeChild(link);
-
-  function convertDataToCSV(data) {
-    const header = Object.keys(data[0]).join(","); // Encabezado con los nombres de las claves
-    const rows = data.map(row => Object.values(row).join(",")); // Filas con los valores
-    return [header, ...rows].join("\n"); // Une encabezado y filas con saltos de línea
-  }
-});
-
-document.getElementById('downloadJSON').addEventListener('click', function() {
-    // Convertir el objeto data a una cadena JSON
-    const json = JSON.stringify(data, null, 2); // El parámetro '2' es para formatear el JSON con indentación
-
-    // Crear un Blob con el contenido JSON
-    const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
-
-    // Crear un enlace para la descarga
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `datos-MI-${serieInput.value.trim()}.json`);
-    link.style.visibility = 'hidden';
-
-    // Añadir el enlace al documento y simular un clic
-    document.body.appendChild(link);
-    link.click();
-
-    // Eliminar el enlace del documento
-    document.body.removeChild(link);
-});
