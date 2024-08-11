@@ -21,11 +21,23 @@ form {
   margin-bottom: 20px;
   border-radius: 5px;
 }
-input[type="text"] {
-  width: 70%;
-  padding: 10px;
-  margin-right: 10px;
+#searchForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
+
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+}
+
 button {
   padding: 10px 15px;
   background: #333;
@@ -33,20 +45,15 @@ button {
   border: none;
   cursor: pointer;
 }
+
 button:hover {
   background: #555;
 }
-#searchForm {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-#searchForm label {
-  white-space: nowrap;
-}
+
 #serieInput {
   flex-grow: 1;
 }
+
 #yearSelect {
   width: auto;
 }
@@ -206,13 +213,6 @@ tr:hover {
     text-align: center;
     margin-top: 20px;
 }
-.about-text {
-  text-align: center;
-  color: #666;
-  font-size: 1.2em;
-  cursor: pointer;
-  margin-top: -10px;
-}
 
 /* Estilo para el modal */
 .modal {
@@ -269,3 +269,15 @@ footer a:hover {
   color: #333;
 }
 
+#description {
+  background-color: #f0f9ff; /* Fondo azul claro */
+  color: #333; /* Texto en color oscuro */
+  padding: 15px; /* Espaciado interno */
+  border-radius: 8px; /* Bordes redondeados */
+  border: 1px solid #cfe8ff; /* Borde ligeramente más oscuro */
+  font-family: 'Arial', sans-serif; /* Fuente */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra para darle profundidad */
+  max-width: 600px; /* Ancho máximo de la cajita */
+  margin: 20px auto; /* Centrado y margen superior/inferior */
+  text-align: center; /* Texto centrado */
+}

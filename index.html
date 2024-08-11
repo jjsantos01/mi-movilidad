@@ -19,20 +19,28 @@
 </head>
 <body>
     <div class="container">
-        <h1>Tus viajes con tarjeta MI</h1>
-        <p id="aboutPage" class="about-text" onclick="openAboutModal()">Sobre esta página</p>
+        <h1>Tus viajes con tarjeta MI - CDMX</h1>
+        <p id="description" onclick="openAboutModal()">
+          Esta página te permite visualizar tus patrones de viajes y recargas
+          con la tarjeta Movilidad Integrada (MI) de la Ciudad de México.
+          Solo necesitas ingresar el número de tarjeta (ocho últimos digitos al reverso de tu tarjeta)
+          y el año de los datos que quieres ver. Haz clic aquí para saber más.
+        </p>
         <form id="searchForm">
-          <input type="text" id="serieInput" placeholder="Ingrese el número de tarjeta, por ejemplo C33XXXXX" required>
-          <label for="yearSelect">Año:</label>
-          <select id="yearSelect">
+          <div class="input-group">
+            <input type="text" id="serieInput" placeholder="Ingrese el número de tarjeta, por ejemplo C33XXXXX" required>
+          </div>
+          <div class="input-group">
+            <label for="yearSelect">Año:</label>
+            <select id="yearSelect">
               <option value="2020">2020</option>
               <option value="2021">2021</option>
               <option value="2022">2022</option>
               <option value="2023">2023</option>
               <option value="2024" selected>2024</option>
-          </select>
-          <i class="fas fa-info-circle info-icon" id="yearInfo"></i>
-          <button type="submit">Buscar</button>
+            </select>
+            <button type="submit">Buscar</button>
+          </div>
         </form>
         <div id="infoPopup" class="popup">
           La página se hizo usando los datos de 2024. Otros años pueden funcionar, pero podrían generar errores.
