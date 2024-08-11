@@ -317,42 +317,68 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function createPieChart(viajes) {
-      const organismoCounts = viajes.reduce((acc, viaje) => {
-          acc[viaje.organismo] = (acc[viaje.organismo] || 0) + 1;
-          return acc;
-      }, {});
+    const organismoCounts = viajes.reduce((acc, viaje) => {
+        acc[viaje.organismo] = (acc[viaje.organismo] || 0) + 1;
+        return acc;
+    }, {});
 
-      const labels = Object.keys(organismoCounts);
-      const dataValues = Object.values(organismoCounts);
+    const series = Object.values(organismoCounts);
+    const labels = Object.keys(organismoCounts);
 
-      const ctx = document.getElementById('pieChart').getContext('2d');
+    const options = {
+        series: series,
+        chart: {
+            type: 'donut',
+            height: 380
+        },
+        labels: labels,
+        colors: labels.map(label => getColorForOrganismo(label)),
+        title: {
+            text: 'Número de Viajes por sistema de transporte',
+            align: 'center'
+        },
+        legend: {
+            position: 'bottom'
+        },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '50%'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val, opts) {
+                return opts.w.config.series[opts.seriesIndex]
+            }
+        },
+        tooltip: {
+            y: {
+                formatter: function(value) {
+                    return value + " viajes";
+                }
+            }
+        },
+        responsive: [{
+            breakpoint: 480,
+            options: {
+                chart: {
+                    width: 300
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }]
+    };
 
-      if (pieChart) {
-          pieChart.destroy();
-      }
+    if (pieChart) {
+        pieChart.destroy();
+    }
 
-      pieChart = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-              labels: labels,
-              datasets: [{
-                  data: dataValues,
-                  backgroundColor: labels.map(label => getColorForOrganismo(label)),
-              }]
-          },
-          options: {
-              responsive: true,
-              plugins: {
-                  legend: {
-                      position: 'top',
-                  },
-                  title: {
-                      display: true,
-                      text: 'Número de Viajes por sistema de transporte'
-                  }
-              }
-          }
-      });
+    pieChart = new ApexCharts(document.querySelector("#pieChart"), options);
+    pieChart.render();
   }
 
   function createLineChart(viajes) {
@@ -365,6 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
         acc[key] = (acc[key] || 0) + 1;
         return acc;
     }, {});
+
     const labels = [];
     const dataValues = {};
 
@@ -375,43 +402,63 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dataValues[organismo]) dataValues[organismo] = [];
         dataValues[organismo].push({ date: monthYear, value: organismoDates[key] });
     });
+
+    // Ordenar labels por fecha
     labels.sort((a, b) => new Date(a) - new Date(b));
-    const datasets = Object.keys(dataValues).map(organismo => {
+
+    // Crear las series de datos para ApexCharts
+    const series = Object.keys(dataValues).map(organismo => {
         return {
-            label: organismo,
+            name: organismo,
             data: labels.map(monthYear => {
                 const found = dataValues[organismo].find(d => d.date === monthYear);
                 return found ? found.value : 0;
-            }),
-            fill: false,
-            borderColor: getColorForOrganismo(organismo),
+            })
         };
     });
-    const ctx = document.getElementById('lineChart').getContext('2d');
+
+    const options = {
+        series: series,
+        chart: {
+            type: 'line',
+            height: 350,
+            zoom: {
+                enabled: false
+            }
+        },
+        title: {
+            text: 'Total de Viajes Mensuales por sistema de transporte',
+            align: 'center'
+        },
+        xaxis: {
+            categories: labels,
+            title: {
+                text: 'Mes y Año'
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Número de Viajes'
+            }
+        },
+        stroke: {
+            curve: 'smooth'
+        },
+        markers: {
+            size: 5,
+        },
+        tooltip: {
+            shared: true,
+            intersect: false
+        }
+    };
 
     if (lineChart) {
         lineChart.destroy();
     }
 
-    lineChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: datasets
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Total de Viajes Mensuales por sistema de transporte'
-                }
-            }
-        }
-    });
+    lineChart = new ApexCharts(document.getElementById('lineChart'), options);
+    lineChart.render();
   }
 
   function createStackedBarChart(viajes) {
@@ -433,51 +480,123 @@ document.addEventListener('DOMContentLoaded', () => {
         dataValues[organismo].push({ day: dayOfWeek, value: organismoDays[key] });
     });
 
-    const datasets = Object.keys(dataValues).map(organismo => {
+    const series = Object.keys(dataValues).map(organismo => {
         return {
-            label: organismo,
+            name: organismo,
             data: labels.map(day => {
                 const found = dataValues[organismo].find(d => d.day === day);
                 return found ? found.value : 0;
-            }),
-            backgroundColor: getColorForOrganismo(organismo),
+            })
         };
     });
 
-    const ctx = document.getElementById('stackedBarChart').getContext('2d');
+    const options = {
+        series: series,
+        chart: {
+            type: 'bar',
+            height: 350,
+            stacked: true,
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+            },
+        },
+        xaxis: {
+            categories: labels,
+            title: {
+                text: 'Día de la semana'
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Número de viajes'
+            }
+        },
+        title: {
+            text: 'Total de viajes por sistema y día de la semana',
+            align: 'center'
+        },
+        fill: {
+            opacity: 1
+        },
+        tooltip: {
+            y: {
+                formatter: function (val) {
+                    return val + " viajes";
+                }
+            }
+        },
+        legend: {
+            position: 'top',
+            horizontalAlign: 'left'
+        }
+    };
 
     if (stackedBarChart) {
       stackedBarChart.destroy();
     }
 
-    stackedBarChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: datasets
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Total de viajes por sistema y día de la semana'
-                }
-            },
-            scales: {
-                x: {
-                    stacked: true
-                },
-                y: {
-                    stacked: true
-                }
-            }
-        }
-    });
-  }
+    stackedBarChart = new ApexCharts(document.getElementById('stackedBarChart'), options);
+    stackedBarChart.render();
+}
+
+  // function createBarChartByMomentoDia(viajes) {
+  //   const momentoData = viajes.reduce((acc, viaje) => {
+  //       const organismo = viaje.organismo;
+  //       const momentoDia = viaje.momento_dia;
+  //       const key = `${organismo}+${momentoDia}`;
+
+  //       acc[key] = (acc[key] || 0) + 1;
+  //       return acc;
+  //   }, {});
+
+  //   const organismos = [...new Set(viajes.map(v => v.organismo))];
+  //   const momentos = ['Mañana', 'Tarde', 'Noche'];
+  //   const dataValues = {};
+
+  //   organismos.forEach(organismo => {
+  //       momentos.forEach(momento => {
+  //           const key = `${organismo}+${momento}`;
+  //           if (!dataValues[organismo]) dataValues[organismo] = [];
+  //           dataValues[organismo].push(momentoData[key] || 0);
+  //       });
+  //   });
+
+  //   const datasets = momentos.map((momento, index) => {
+  //       return {
+  //           label: momento,
+  //           data: organismos.map(organismo => dataValues[organismo][index]),
+  //           backgroundColor: getColorForOrganismo(momento),
+  //       };
+  //   });
+
+  //   const ctx = document.getElementById('barChartMomentoDia').getContext('2d');
+
+  //   if (barChartMomentoDia) {
+  //       barChartMomentoDia.destroy();
+  //   }
+
+  //   barChartMomentoDia = new Chart(ctx, {
+  //       type: 'bar',
+  //       data: {
+  //           labels: organismos,
+  //           datasets: datasets
+  //       },
+  //       options: {
+  //           responsive: true,
+  //           plugins: {
+  //               legend: {
+  //                   position: 'top',
+  //               },
+  //               title: {
+  //                   display: true,
+  //                   text: 'Total de viajes por sistema y momento del día'
+  //               }
+  //           },
+  //       }
+  //   });
+  // }
 
   function createBarChartByMomentoDia(viajes) {
     const momentoData = viajes.reduce((acc, viaje) => {
@@ -491,49 +610,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const organismos = [...new Set(viajes.map(v => v.organismo))];
     const momentos = ['Mañana', 'Tarde', 'Noche'];
-    const dataValues = {};
-
-    organismos.forEach(organismo => {
-        momentos.forEach(momento => {
-            const key = `${organismo}+${momento}`;
-            if (!dataValues[organismo]) dataValues[organismo] = [];
-            dataValues[organismo].push(momentoData[key] || 0);
-        });
-    });
-
-    const datasets = momentos.map((momento, index) => {
+    const seriesData = momentos.map(momento => {
         return {
-            label: momento,
-            data: organismos.map(organismo => dataValues[organismo][index]),
-            backgroundColor: getColorForOrganismo(momento),
+            name: momento,
+            data: organismos.map(organismo => momentoData[`${organismo}+${momento}`] || 0)
         };
     });
 
-    const ctx = document.getElementById('barChartMomentoDia').getContext('2d');
+    const options = {
+        series: seriesData,
+        chart: {
+            type: 'bar',
+            height: 350,
+            stacked: false,
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+            },
+        },
+        xaxis: {
+            categories: organismos,
+            title: {
+                text: 'Sistema de Transporte'
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Número de Viajes'
+            }
+        },
+        legend: {
+            position: 'top',
+        },
+        fill: {
+            opacity: 1
+        },
+        title: {
+            text: 'Total de viajes por sistema y momento del día',
+            align: 'center'
+        },
+        tooltip: {
+            y: {
+                formatter: function (val) {
+                    return `${val} viajes`;
+                }
+            }
+        }
+    };
 
     if (barChartMomentoDia) {
-        barChartMomentoDia.destroy();
+      barChartMomentoDia.destroy();
     }
 
-    barChartMomentoDia = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: organismos,
-            datasets: datasets
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Total de viajes por sistema y momento del día'
-                }
-            },
-        }
-    });
+    barChartMomentoDia = new ApexCharts(document.getElementById('barChartMomentoDia'), options);
+    barChartMomentoDia.render();
   }
 
   function createHeatmap(viajes, selectedOrganismo = 'Todos') {
