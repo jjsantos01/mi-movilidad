@@ -1,11 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('searchForm');
   const serieInput = document.getElementById('serieInput');
-  const resultsTable = document.getElementById('resultsTable');
+  let resultsTable = document.getElementById('resultsTable');
   const tableHeader = document.getElementById('tableHeader');
   const tableBody = document.getElementById('tableBody');
-  const prod = 0  ; // 0 para usar datos locales, 1 para usar API
+  const prod = 1  ; // 0 para usar datos locales, 1 para usar API
   let pieChart;
+  let lineChart;
+  let stackedBarChart;
+  let barChartMomentoDia;
+  let saldoFinalChart;
+  let resultsTableDT;
   window.mapInstances = {};
 
   form.addEventListener('submit', async (e) => {
@@ -17,6 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
               const viajes = processViajes(data);
               const metro = createMetroObject(viajes, 'STC');
               const metrobus = createMetroObject(viajes, 'METROBÚS');
+              const ecobici = data.filter(d => d.organismo === 'ECOBICI');
+              const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
+              const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
               setupCollapsibleSections();
               displayResults(data);
               createPieChart(viajes);
@@ -38,8 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
               createTop10MetroLinesChart(metrobus, 'METROBÚS');
               createTop10MetroStationsChart(metrobus, 'METROBÚS');
               createMetroMap(metrobus, 'METROBÚS');
-              createEcobiciHeatmap(data, tipo='viajes');
-              createEcobiciHeatmap(data, tipo='tiempo');
+              // Ecobici
+              createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes');
+              createEcobiciHeatmap(inicioViaje, finViaje, tipo='tiempo');
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
@@ -106,11 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return viajes.filter(viaje => viaje.organismo === selectedOrganismo);
   }
 
-  function getEcobiciODViajes(data) {
-    const ecobici = data.filter(d => d.organismo === 'ECOBICI');
-    const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
-    const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
-
+  function getEcobiciODViajes(inicioViaje, finViaje) {
     // Crear un mapa de viajes
     const viajesMap = new Map();
     inicioViaje.forEach(inicio => {
@@ -128,11 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function getEcobiciODMeanTime(data, minCount = 2) {
-    const ecobici = data.filter(d => d.organismo === 'ECOBICI');
-    const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
-    const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
-
+  function getEcobiciODMeanTime(inicioViaje, finViaje) {
     // Crear un mapa para almacenar tiempos de viaje entre estaciones
     const viajesMap = new Map();
 
@@ -220,7 +221,10 @@ document.addEventListener('DOMContentLoaded', () => {
               });
               tableBody.appendChild(tr);
           });
-          new DataTable('#resultsTable')
+          if (resultsTableDT){
+            resultsTableDT.destroy()
+          }
+          resultsTableDT = new DataTable('#resultsTable')
       } else {
           resultsTable.style.display = 'none';
           alert('No se encontraron resultados para el número de serie proporcionado.');
@@ -313,7 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  let lineChart;
   function createLineChart(viajes) {
     const organismoDates = viajes.reduce((acc, viaje) => {
         const date = new Date(viaje.fecha.split(' ')[0].split('-').reverse().join('-'));
@@ -405,7 +408,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ctx = document.getElementById('stackedBarChart').getContext('2d');
 
-    new Chart(ctx, {
+    if (stackedBarChart) {
+      stackedBarChart.destroy();
+    }
+
+    stackedBarChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
@@ -466,7 +473,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ctx = document.getElementById('barChartMomentoDia').getContext('2d');
 
-    new Chart(ctx, {
+    if (barChartMomentoDia) {
+        barChartMomentoDia.destroy();
+    }
+
+    barChartMomentoDia = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: organismos,
@@ -563,7 +574,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ctx = document.getElementById('saldoFinalChart').getContext('2d');
 
-    new Chart(ctx, {
+    if (saldoFinalChart) {
+      saldoFinalChart.destroy();
+    }
+
+    saldoFinalChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: dates,
@@ -806,6 +821,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initializeMap(sistema, lat, lng, zoom) {
     const mapId = `map${sistema}`;
+
+    if (window.mapInstances[mapId]) {
+      window.mapInstances[mapId].remove();
+    }
+
     const map = L.map(mapId).setView([lat, lng], zoom);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -833,7 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeMap(sistema, 19.432608, -99.133209, 12);
 
     // Cargar y mostrar las líneas del metro
-    fetch(`datos/lineas_${sistema.toLowerCase()}.geojson`)
+    fetch(`maps/lineas_${sistema.toLowerCase()}.geojson`)
     .then(response => response.json())
     .then(data => {
     L.geoJSON(data,
@@ -861,7 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {});
 
     // Cargar y mostrar las estaciones del metro
-    fetch(`datos/estaciones_${sistema.toLowerCase()}.geojson`)
+    fetch(`maps/estaciones_${sistema.toLowerCase()}.geojson`)
     .then(response => response.json())
     .then(data => {
     L.geoJSON(data, {
@@ -887,10 +907,10 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(error => console.error('Error al cargar las estaciones del metro:', error));
   }
 
-  function createEcobiciHeatmap(data, tipo='viajes') {
+  function createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes') {
     // Procesar los datos
-    const viajes = getEcobiciODViajes(data);
-    const processedData = tipo=='viajes' ? viajes : getEcobiciODMeanTime(data);
+    const viajes = getEcobiciODViajes(inicioViaje, finViaje);
+    const processedData = tipo=='viajes' ? viajes : getEcobiciODMeanTime(inicioViaje, finViaje);
     // Obtener estaciones únicas
     const estaciones = [...new Set([...processedData.map(d => d.x), ...processedData.map(d => d.y)])];
 
@@ -945,7 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const seriesMap = convertDataToHeatmapSeries(processedData, estaciones);
     const ordenEstaciones = seriesMap.map(s => s.name);
-    const prefixTitle = tipo === 'viajes' ? 'Viajes' : 'Tiempo promedio de viaje';
+    const prefixTitle = tipo === 'viajes' ? 'Número de viajes' : 'Tiempo promedio de viaje';
 
     // Configurar y crear el gráfico
     const options = {
@@ -989,6 +1009,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function populateOrganismoSelector(viajes) {
     const organismos = [...new Set(viajes.map(viaje => viaje.organismo))];
     const selector = document.getElementById('organismoSelector');
+
+    selector.innerHTML = '';
+
+    // Añadir una opción predeterminada o vacía (opcional)
+    const defaultOption = document.createElement('option');
+    defaultOption.value = 'Todos';
+    defaultOption.text = 'Todos';
+    selector.add(defaultOption);
 
     organismos.forEach(organismo => {
         const option = document.createElement('option');
