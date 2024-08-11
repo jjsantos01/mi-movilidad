@@ -16,9 +16,11 @@ function resizeAllCharts() {
   resizeChart(saldoFinalChart);
 }
 
+let data = [];
+let serieInput;
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('searchForm');
-  const serieInput = document.getElementById('serieInput');
+  serieInput = document.getElementById('serieInput');
   let resultsTable = document.getElementById('resultsTable');
   const tableHeader = document.getElementById('tableHeader');
   const tableBody = document.getElementById('tableBody');
@@ -36,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const serie = serieInput.value.trim();
       if (serie) {
           try {
-              const data = await fetchData(serie);
+              data = await fetchData(serie);
               const viajes = processViajes(data);
               const metro = createMetroObject(viajes, 'STC');
               const metrobus = createMetroObject(viajes, 'METROBÚS');
@@ -262,7 +264,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (resultsTableDT){
             resultsTableDT.destroy()
           }
-          resultsTableDT = new DataTable('#resultsTable')
+          resultsTableDT = new DataTable('#resultsTable', {
+            scrollX: true
+          })
       } else {
           resultsTable.style.display = 'none';
           alert('No se encontraron resultados para el número de serie proporcionado.');
@@ -539,64 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     stackedBarChart = new ApexCharts(document.getElementById('stackedBarChart'), options);
     stackedBarChart.render();
-}
-
-  // function createBarChartByMomentoDia(viajes) {
-  //   const momentoData = viajes.reduce((acc, viaje) => {
-  //       const organismo = viaje.organismo;
-  //       const momentoDia = viaje.momento_dia;
-  //       const key = `${organismo}+${momentoDia}`;
-
-  //       acc[key] = (acc[key] || 0) + 1;
-  //       return acc;
-  //   }, {});
-
-  //   const organismos = [...new Set(viajes.map(v => v.organismo))];
-  //   const momentos = ['Mañana', 'Tarde', 'Noche'];
-  //   const dataValues = {};
-
-  //   organismos.forEach(organismo => {
-  //       momentos.forEach(momento => {
-  //           const key = `${organismo}+${momento}`;
-  //           if (!dataValues[organismo]) dataValues[organismo] = [];
-  //           dataValues[organismo].push(momentoData[key] || 0);
-  //       });
-  //   });
-
-  //   const datasets = momentos.map((momento, index) => {
-  //       return {
-  //           label: momento,
-  //           data: organismos.map(organismo => dataValues[organismo][index]),
-  //           backgroundColor: getColorForOrganismo(momento),
-  //       };
-  //   });
-
-  //   const ctx = document.getElementById('barChartMomentoDia').getContext('2d');
-
-  //   if (barChartMomentoDia) {
-  //       barChartMomentoDia.destroy();
-  //   }
-
-  //   barChartMomentoDia = new Chart(ctx, {
-  //       type: 'bar',
-  //       data: {
-  //           labels: organismos,
-  //           datasets: datasets
-  //       },
-  //       options: {
-  //           responsive: true,
-  //           plugins: {
-  //               legend: {
-  //                   position: 'top',
-  //               },
-  //               title: {
-  //                   display: true,
-  //                   text: 'Total de viajes por sistema y momento del día'
-  //               }
-  //           },
-  //       }
-  //   });
-  // }
+  }
 
   function createBarChartByMomentoDia(viajes) {
     const momentoData = viajes.reduce((acc, viaje) => {
@@ -812,9 +759,9 @@ document.addEventListener('DOMContentLoaded', () => {
     saldoFinalChart.render();
   }
 
-function parseDateTime(dateString) {
-    return new Date(dateString).getTime();
-}
+  function parseDateTime(dateString) {
+      return new Date(dateString).getTime();
+  }
 
   function createTop10MetroLinesChart(metro, organismo = 'STC') {
 
@@ -1201,3 +1148,53 @@ function parseDateTime(dateString) {
 });
 
 document.addEventListener('resize', resizeAllCharts);
+
+document.getElementById('downloadCSV').addEventListener('click', function() {
+  // Convierte los datos a CSV
+  const csv = convertDataToCSV(data);
+
+  // Crear un Blob con el contenido CSV
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+  // Crear un enlace para la descarga
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", `datos-MI-${serieInput.value.trim()}.csv`);
+  link.style.visibility = 'hidden';
+
+  // Añadir el enlace al documento y simular un clic
+  document.body.appendChild(link);
+  link.click();
+
+  // Eliminar el enlace del documento
+  document.body.removeChild(link);
+
+  function convertDataToCSV(data) {
+    const header = Object.keys(data[0]).join(","); // Encabezado con los nombres de las claves
+    const rows = data.map(row => Object.values(row).join(",")); // Filas con los valores
+    return [header, ...rows].join("\n"); // Une encabezado y filas con saltos de línea
+  }
+});
+
+document.getElementById('downloadJSON').addEventListener('click', function() {
+    // Convertir el objeto data a una cadena JSON
+    const json = JSON.stringify(data, null, 2); // El parámetro '2' es para formatear el JSON con indentación
+
+    // Crear un Blob con el contenido JSON
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+
+    // Crear un enlace para la descarga
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `datos-MI-${serieInput.value.trim()}.json`);
+    link.style.visibility = 'hidden';
+
+    // Añadir el enlace al documento y simular un clic
+    document.body.appendChild(link);
+    link.click();
+
+    // Eliminar el enlace del documento
+    document.body.removeChild(link);
+});
