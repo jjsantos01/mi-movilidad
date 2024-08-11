@@ -518,17 +518,19 @@ function createLineChart(viajes) {
 
   // Crear las series de datos para ApexCharts
   const series = Object.keys(dataValues).map(organismo => {
-      return {
-          name: organismo,
-          data: labels.map(monthYear => {
-              const found = dataValues[organismo].find(d => d.date === monthYear);
-              return found ? found.value : 0;
-          })
-      };
+    return {
+      name: organismo,
+      data: labels.map(monthYear => {
+        const found = dataValues[organismo].find(d => d.date === monthYear);
+        return found ? found.value : 0;
+      }),
+      color: colorPalette[organismo] // Añadir el color correspondiente
+    };
   });
 
   const options = {
       series: series,
+      colors: series.map(s => s.color),
       chart: {
           type: 'line',
           height: 350,
@@ -596,12 +598,14 @@ function createStackedBarChart(viajes) {
           data: labels.map(day => {
               const found = dataValues[organismo].find(d => d.day === day);
               return found ? found.value : 0;
-          })
+          }),
+          color: colorPalette[organismo]
       };
   });
 
   const options = {
       series: series,
+      colors: series.map(s => s.color),
       chart: {
           type: 'bar',
           height: 350,
