@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta de Tarjetas SEMOVI</title>
+    <title>Tus viajes MI</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -20,59 +20,90 @@
 </head>
 <body>
     <div class="container">
-        <h1>Consulta de Tarjetas SEMOVI</h1>
+        <h1>Tus viajes con tarjeta MI</h1>
         <form id="searchForm">
-            <input type="text" id="serieInput" placeholder="Ingrese el número de serie" value="0">
+            <input type="text" id="serieInput" placeholder="Ingrese el número de tarjeta, por ejemplo C33XXXXX" value="0">
             <button type="submit">Buscar</button>
         </form>
-        <div id="chartContainer">
-          <canvas id="pieChart"></canvas>
-          <canvas id="lineChart"></canvas>
-          <canvas id="stackedBarChart"></canvas>
-          <canvas id="barChartMomentoDia"></canvas>
-          <div id="heatmapMomentoDia">
-            <label for="organismoSelector">Selecciona sistema:</label>
-            <select id="organismoSelector">
-              <option value="Todos">Todos</option>
-            </select>
-            <div id="heatmapChart"></div>
+        <div id="statsContainer">
+          <div class="stat-box">
+              <h3>Total de Viajes</h3>
+              <p id="totalViajes">Cargando...</p>
           </div>
-          <canvas id="saldoFinalChart"></canvas>
+          <div class="stat-box">
+              <h3>Total de Recargas</h3>
+              <p id="totalRecargas">Cargando...</p>
+          </div>
         </div>
+        <div id="chartContainer">
+          <div class="chart-row pie-chart-row">
+            <div class="chart-item pie-chart-container">
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+          <div class="chart-row pie-chart-row">
+              <div class="chart-item pie-chart-container">
+                  <canvas id="lineChart"></canvas>
+              </div>
+          </div>
+          <div class="chart-row pie-chart-row">
+              <div class="chart-item pie-chart-container">
+                  <canvas id="stackedBarChart"></canvas>
+              </div>
+          </div>
+          <div class="chart-row pie-chart-row">
+              <div class="chart-item pie-chart-container">
+                  <canvas id="barChartMomentoDia"></canvas>
+              </div>
+            </div>
+        </div>
+        <div id="heatmapMomentoDia" class="chart-row">
+            <div class="chart-item full-width">
+              <label for="organismoSelector">Selecciona sistema:</label>
+              <select id="organismoSelector">
+                <option value="Todos">Todos</option>
+              </select>
+              <div id="heatmapChart"></div>
+            </div>
+        </div>
+        <div class="chart-row">
+            <div class="chart-item full-width">
+                <div id="saldoFinalChart"></div>
+            </div>
+          </div>
+
         <div id="metroSection" class="collapsible-section">
           <h2>Viajes en Metro</h2>
           <div class="section-content">
-              <div id="top10MetroLinesChart"></div>
-              <div id="top10MetroStationsChart"></div>
+              <div id="top10MetroLinesChart" class="chart-container"></div>
+              <div id="top10MetroStationsChart" class="chart-container"></div>
               <div id="mapMetro" class="map-container"></div>
           </div>
-          <div id="metrobusSection" class="collapsible-section">
-            <h2>Viajes en Metrobús</h2>
-            <div class="section-content">
-                <div id="top10MetrobusLinesChart"></div>
-                <div id="top10MetrobusStationsChart"></div>
-                <div id="mapMetrobús" class="map-container"></div>
-            </div>
-          </div>
-          <div id="ecobiciSection" class="collapsible-section">
-            <h2>Viajes en Ecobici</h2>
-            <div class="section-content">
-                <div id="ecobici-viajes"></div>
-                <div id="ecobici-tiempo"></div>
-            </div>
-          </div>
-
-
         </div>
-      </div>
-      <div id="results">
-          <table id="resultsTable">
-              <thead>
-                  <tr id="tableHeader"></tr>
-              </thead>
-              <tbody id="tableBody"></tbody>
-          </table>
-      </div>
+        <div id="metrobusSection" class="collapsible-section">
+          <h2>Viajes en Metrobús</h2>
+          <div class="section-content">
+              <div id="top10MetrobusLinesChart" class="chart-container"></div>
+              <div id="top10MetrobusStationsChart" class="chart-container"></div>
+              <div id="mapMetrobús" class="map-container"></div>
+          </div>
+        </div>
+        <div id="ecobiciSection" class="collapsible-section">
+          <h2>Viajes en Ecobici</h2>
+          <div class="section-content">
+              <div id="ecobici-viajes" class="chart-container"></div>
+              <div id="ecobici-tiempo" class="chart-container"></div>
+          </div>
+        </div>
+        <div id="results">
+            <table id="resultsTable">
+                <thead>
+                    <tr id="tableHeader"></tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
       <script src="script.js"></script>
+    </div>
 </body>
 </html>

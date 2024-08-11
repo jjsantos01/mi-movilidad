@@ -112,3 +112,111 @@ tr:hover {
   height: 600px;
   width: 100%;
 }
+
+#statsContainer {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.stat-box {
+  background-color: #fff;
+  border-radius: 5px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  width: 45%;
+}
+
+.stat-box h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.stat-box p {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 0;
+}
+
+#chartContainer {
+  background: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.chart-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.chart-item {
+  width: 48%; /* Ajusta este valor según necesites */
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 15px;
+  box-sizing: border-box;
+  position: relative; /* Añadido para posicionamiento del canvas */
+}
+
+.full-width {
+  width: 100%;
+}
+
+/* Estilos para los canvas */
+.chart-item canvas {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 300px; /* Ajusta según necesites */
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .chart-row {
+      flex-direction: column;
+  }
+
+.chart-item {
+      width: 100%;
+      margin-bottom: 20px;
+  }
+}
+
+.section-content {
+  padding: 20px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 300px; /* Ajusta esta altura según tus necesidades */
+  margin-bottom: 20px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .chart-container, .map-container {
+      height: 250px; /* Altura reducida para pantallas más pequeñas */
+  }
+}
+
+.pie-chart-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.pie-chart-container {
+  width: 70%;
+  max-width: 800px; /* Ajusta esto según tus necesidades */
+  height: 400px; /* Ajusta la altura según tus necesidades */
+}
+
+.pie-chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}

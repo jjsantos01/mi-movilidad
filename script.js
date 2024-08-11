@@ -1,10 +1,28 @@
+function resizeChart(chart) {
+  if (chart && chart.canvas) {
+      const parent = chart.canvas.parentNode;
+      chart.canvas.style.width = '100%';
+      chart.canvas.style.height = 'auto';
+      chart.canvas.height = parent.offsetHeight;
+      chart.canvas.width = parent.offsetWidth;
+  }
+}
+
+function resizeAllCharts() {
+  resizeChart(pieChart);
+  resizeChart(lineChart);
+  resizeChart(stackedBarChart);
+  resizeChart(barChartMomentoDia);
+  resizeChart(saldoFinalChart);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('searchForm');
   const serieInput = document.getElementById('serieInput');
   let resultsTable = document.getElementById('resultsTable');
   const tableHeader = document.getElementById('tableHeader');
   const tableBody = document.getElementById('tableBody');
-  const prod = 1  ; // 0 para usar datos locales, 1 para usar API
+  const prod = 0  ; // 0 para usar datos locales, 1 para usar API
   let pieChart;
   let lineChart;
   let stackedBarChart;
@@ -25,6 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
               const ecobici = data.filter(d => d.organismo === 'ECOBICI');
               const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
               const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
+              getTotalViajes(viajes)
+              getTotalRecargas(data);
               setupCollapsibleSections();
               displayResults(data);
               createPieChart(viajes);
@@ -49,6 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
               // Ecobici
               createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes');
               createEcobiciHeatmap(inicioViaje, finViaje, tipo='tiempo');
+              // resize
+              resizeAllCharts();
           } catch (error) {
               console.error('Error:', error);
               alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
@@ -193,6 +215,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+  }
+
+  function getTotalViajes(viajes) {
+    const totalViajes = viajes.length;
+    document.getElementById('totalViajes').textContent = totalViajes.toLocaleString();
+  }
+
+  function getTotalRecargas(data) {
+    const totalRecargas = data.reduce((total, viaje) => {
+      if (viaje.operacion === '00-RECARGA') {
+          return total + parseFloat(viaje.monto);
+      }
+      return total;
+    }, 0);
+
+    document.getElementById('totalRecargas').textContent = `$${totalRecargas.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
   }
 
   function displayResults(data) {
@@ -566,82 +604,86 @@ document.addEventListener('DOMContentLoaded', () => {
         return dateA - dateB;
     });
 
-    const dates = sortedData.map(item => parseDateTime(item.fecha));
-    const saldos = sortedData.map(item => {
-        const saldo = parseFloat(item.saldo_final);
-        return isNaN(saldo) ? null : saldo;
-    });
+    const chartData = sortedData.map(item => ({
+        x: parseDateTime(item.fecha),
+        y: parseFloat(item.saldo_final) || null
+    }));
 
-    const ctx = document.getElementById('saldoFinalChart').getContext('2d');
-
-    if (saldoFinalChart) {
-      saldoFinalChart.destroy();
-    }
-
-    saldoFinalChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: dates,
-            datasets: [{
-                label: 'Saldo Final',
-                data: saldos,
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1
-            }]
+    const options = {
+        series: [{
+            name: 'Saldo Final',
+            data: chartData
+        }],
+        chart: {
+            type: 'line',
+            height: 350,
+            zoom: {
+                enabled: true
+            }
         },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Histórico de Saldo Final'
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.parsed.y !== null) {
-                                label += new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(context.parsed.y);
-                            }
-                            return label;
-                        }
-                    }
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: 'straight'
+        },
+        title: {
+            text: 'Histórico de Saldo de tarjeta MI',
+            align: 'left'
+        },
+        grid: {
+            row: {
+                colors: ['#f3f3f3', 'transparent'],
+                opacity: 0.5
+            },
+        },
+        xaxis: {
+            type: 'datetime',
+            labels: {
+                datetimeFormatter: {
+                    year: 'yyyy',
+                    month: 'MMM \'yy',
+                    day: 'dd MMM',
+                    hour: 'HH:mm'
                 }
             },
-            scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: 'day',
-                        displayFormats: {
-                            day: 'dd-MM-yyyy'
-                        }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Fecha'
-                    }
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Saldo Final'
-                    },
-                    ticks: {
-                        callback: function(value, index, values) {
-                            return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
-                        }
-                    }
+            title: {
+                text: 'Fecha'
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Saldo Final'
+            },
+            labels: {
+                formatter: function (value) {
+                    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
+                }
+            }
+        },
+        tooltip: {
+            x: {
+                format: 'dd MMM yyyy'
+            },
+            y: {
+                formatter: function (value) {
+                    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
                 }
             }
         }
-    });
+    };
+
+    if (saldoFinalChart) {
+        saldoFinalChart.destroy();
+    }
+
+    saldoFinalChart = new ApexCharts(document.querySelector("#saldoFinalChart"), options);
+    saldoFinalChart.render();
   }
+
+function parseDateTime(dateString) {
+    return new Date(dateString).getTime();
+}
 
   function createTop10MetroLinesChart(metro, organismo = 'STC') {
 
@@ -1026,3 +1068,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+document.addEventListener('resize', resizeAllCharts);
