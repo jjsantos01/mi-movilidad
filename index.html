@@ -20,6 +20,7 @@
 <body>
     <div class="container">
         <h1>Tus viajes con tarjeta MI</h1>
+        <p id="aboutPage" class="about-text" onclick="openAboutModal()">Sobre esta página</p>
         <form id="searchForm">
           <input type="text" id="serieInput" placeholder="Ingrese el número de tarjeta, por ejemplo C33XXXXX" required>
           <label for="yearSelect">Año:</label>
@@ -114,6 +115,20 @@
               <tbody></tbody>
             </table>
         </div>
+        <div id="aboutModal" class="modal">
+          <div class="modal-content">
+            <span class="close" onclick="closeAboutModal()">&times;</span>
+            <h2>Sobre esta página</h2>
+            <p>Este es un proyecto personal, sin fines de lucro, ni afiliación gubernamental ni partidista.</p>
+            <p>Es seguro y privado para los usuarios, ya que no recopila ni guarda ninguna información, de la tarjeta o de sus usuarios, todo se ejecuta desde el navegador.</p>
+            <p>La información proviene directamente de la página pública oficial de semovi (<a href="https://app.semovi.cdmx.gob.mx/MI_movilidad/trazabilidad" target="_blank">https://app.semovi.cdmx.gob.mx/MI_movilidad/trazabilidad</a>). Este Sitio lo único que hace es visualizarla.</p>
+            <p>El código es público y está disponible en: <a href="https://github.com/jjsantos01/mi-movilidad/tree/master" target="_blank">GitHub</a>.</p>
+            <p>En la gráfica de momento del día, se considera Mañana antes de 12pm, Tarde antes de 7pm y noche de 7pm en adelante.</p>
+          </div>
+        </div>
+        <footer>
+          <p>Creado por <a href="https://twitter.com/jjsantoso" target="_blank">@jjsantoso</a></p>
+        </footer>
       <script src="script.js"></script>
     </div>
 </body>

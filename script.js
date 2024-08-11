@@ -1263,3 +1263,18 @@ function populateOrganismoSelector(viajes) {
       selector.add(option);
   });
 }
+
+function openAboutModal() {
+  document.getElementById('aboutModal').style.display = "block";
+}
+
+function closeAboutModal() {
+  document.getElementById('aboutModal').style.display = "none";
+}
+
+// Cerrar el modal cuando se hace clic fuera de él
+window.onclick = function(event) {
+  if (event.target == document.getElementById('aboutModal')) {
+    closeAboutModal();
+  }
+}
