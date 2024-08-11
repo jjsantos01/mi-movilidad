@@ -1,3 +1,20 @@
+const prod = 1  ; // 0 para usar datos locales, 1 para usar API
+let data = [];
+let serieInput;
+let pieChart;
+let lineChart;
+let stackedBarChart;
+let barChartMomentoDia;
+let heatmapChart;
+let saldoFinalChart;
+let top10MetroLinesChart;
+let top10MetroStationsChart;
+let top10MetrobusLinesChart;
+let top10MetrobusStationsChart;
+let ecobiciHeatmapViajes;
+let ecobiciHeatmapTiempo;
+let resultsDataTable;
+
 function resizeChart(chart) {
   if (chart && chart.canvas) {
       const parent = chart.canvas.parentNode;
@@ -16,34 +33,97 @@ function resizeAllCharts() {
   resizeChart(saldoFinalChart);
 }
 
-let data = [];
-let serieInput;
-const prod = 1  ; // 0 para usar datos locales, 1 para usar API
+function setupCollapsibleSections() {
+  const sections = document.querySelectorAll('.collapsible-section h2');
+  sections.forEach(section => {
+      section.addEventListener('click', () => {
+          section.classList.toggle('active');
+          const content = section.nextElementSibling;
+          content.classList.toggle('active');
+          if (content.classList.contains('active')) {
+              content.style.display = 'block';
+              setTimeout(() => {
+                  // Busca todos los contenedores de mapas en este contenido
+                  const mapContainers = content.querySelectorAll('[id^="map"]');
+                  mapContainers.forEach(mapContainer => {
+                      const mapId = mapContainer.id;
+                      if (window.mapInstances[mapId]) {
+                          window.mapInstances[mapId].invalidateSize();
+                      }
+                  });
+              }, 100);
+          } else {
+              content.style.display = 'none';
+          }
+      });
+  });
+}
+
+function destroyAllCharts(charts) {
+  charts.forEach(chart => {
+    if (chart) {
+      chart.destroy();
+      console.log('Chart destroyed:', chart);
+    }
+  });
+}
+
+function displayResults(data) {
+    const resultsTable = document.getElementById('resultsTable');
+
+    if (data && data.length > 0) {
+        // Get all unique keys from all objects in the data array
+        const allKeys = [...new Set(data.flatMap(Object.keys))];
+
+        // If DataTable doesn't exist or has different columns, initialize/reinitialize it
+        if (!$.fn.DataTable.isDataTable('#resultsTable') ||
+            resultsDataTable.columns().header().length !== allKeys.length) {
+
+            if (resultsDataTable) {
+                resultsDataTable.destroy();
+            }
+
+            resultsDataTable = $('#resultsTable').DataTable({
+                columns: allKeys.map(key => ({
+                    title: key,
+                    data: key,
+                    defaultContent: '' // Use this for missing data
+                })),
+                scrollX: true
+            });
+        }
+
+        // Clear existing data and add new data
+        resultsDataTable.clear().rows.add(data).draw();
+
+        resultsTable.style.display = 'table';
+    } else {
+        // If there's no data, destroy the DataTable if it exists
+        if ($.fn.DataTable.isDataTable('#resultsTable')) {
+            resultsDataTable.destroy();
+            resultsDataTable = null;
+        }
+
+        resultsTable.style.display = 'none';
+        alert('No se encontraron resultados para el número de serie proporcionado.');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('searchForm');
   serieInput = document.getElementById('serieInput');
-  let resultsTable = document.getElementById('resultsTable');
-  const tableHeader = document.getElementById('tableHeader');
-  const tableBody = document.getElementById('tableBody');
-  let pieChart;
-  let lineChart;
-  let stackedBarChart;
-  let barChartMomentoDia;
-  let heatmapChart;
-  let saldoFinalChart;
-  let resultsTableDT;
-  let top10MetroLinesChart;
-  let top10MetroStationsChart;
-  let top10MetrobusLinesChart;
-  let top10MetrobusStationsChart;
-  let ecobiciHeatmapViajes;
-  let ecobiciHeatmapTiempo;
+  const charts = [pieChart, lineChart, stackedBarChart, barChartMomentoDia,
+     heatmapChart, saldoFinalChart, top10MetroLinesChart,
+     top10MetroStationsChart, top10MetrobusLinesChart,
+      top10MetrobusStationsChart, ecobiciHeatmapViajes, ecobiciHeatmapTiempo];
   window.mapInstances = {};
+  setupCollapsibleSections();
 
   form.addEventListener('submit', async (e) => {
       e.preventDefault();
       data = [];
       showLoadingMessage();
+      destroyAllCharts(charts);
       const serie = serieInput.value.trim();
       if (serie) {
           try {
@@ -54,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
               const ecobici = data.filter(d => d.organismo === 'ECOBICI');
               const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
               const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
-              setupCollapsibleSections();
               showAllSections();
               getTotalViajes(viajes)
               getTotalRecargas(data);
@@ -233,32 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function setupCollapsibleSections() {
-    const sections = document.querySelectorAll('.collapsible-section h2');
-    sections.forEach(section => {
-        section.addEventListener('click', () => {
-            section.classList.toggle('active');
-            const content = section.nextElementSibling;
-            content.classList.toggle('active');
-            if (content.classList.contains('active')) {
-                content.style.display = 'block';
-                setTimeout(() => {
-                    // Busca todos los contenedores de mapas en este contenido
-                    const mapContainers = content.querySelectorAll('[id^="map"]');
-                    mapContainers.forEach(mapContainer => {
-                        const mapId = mapContainer.id;
-                        if (window.mapInstances[mapId]) {
-                            window.mapInstances[mapId].invalidateSize();
-                        }
-                    });
-                }, 100);
-            } else {
-                content.style.display = 'none';
-            }
-        });
-    });
-  }
-
   function getTotalViajes(viajes) {
     const totalViajes = viajes.length;
     document.getElementById('totalViajes').textContent = totalViajes.toLocaleString();
@@ -273,44 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 0);
 
     document.getElementById('totalRecargas').textContent = `$${totalRecargas.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-  }
-
-  function displayResults(data) {
-      if (data && data.length > 0) {
-          resultsTable.style.display = 'table';
-
-          // Clear previous results
-          tableHeader.innerHTML = '';
-          tableBody.innerHTML = '';
-
-          // Create table header
-          const headers = Object.keys(data[0]);
-          headers.forEach(header => {
-              const th = document.createElement('th');
-              th.textContent = header;
-              tableHeader.appendChild(th);
-          });
-
-          // Populate table body
-          data.forEach(row => {
-              const tr = document.createElement('tr');
-              headers.forEach(header => {
-                  const td = document.createElement('td');
-                  td.textContent = row[header];
-                  tr.appendChild(td);
-              });
-              tableBody.appendChild(tr);
-          });
-          if (resultsTableDT){
-            resultsTableDT.destroy()
-          }
-          resultsTableDT = new DataTable('#resultsTable', {
-            scrollX: true
-          })
-      } else {
-          resultsTable.style.display = 'none';
-          alert('No se encontraron resultados para el número de serie proporcionado.');
-      }
   }
 
   function getMomentoDia(hora) {
