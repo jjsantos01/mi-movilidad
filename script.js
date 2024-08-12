@@ -1,4 +1,4 @@
-const prod = 1  ; // 0 para usar datos locales, 1 para usar API
+const prod = window.location.hostname === "localhost" ? 0 : 1;
 let data = [];
 let serieInput;
 let pieChart;
