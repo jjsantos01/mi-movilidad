@@ -73,24 +73,29 @@
               </div>
           </div>
           <div class="chart-row">
+            <div class="chart-item full-width">
+                <div id="viajesPorHora"></div>
+            </div>
+          </div>
+          <div class="chart-row">
               <div class="chart-item full-width">
                   <div id="barChartMomentoDia"></div>
               </div>
+          </div>
+          <div id="heatmapMomentoDia" class="chart-row">
+            <div class="chart-item full-width">
+              <label for="organismoSelector">Selecciona sistema:</label>
+              <select id="organismoSelector">
+                <option value="Todos">Todos</option>
+              </select>
+              <div id="heatmapChart"></div>
             </div>
-            <div id="heatmapMomentoDia" class="chart-row">
-              <div class="chart-item full-width">
-                <label for="organismoSelector">Selecciona sistema:</label>
-                <select id="organismoSelector">
-                  <option value="Todos">Todos</option>
-                </select>
-                <div id="heatmapChart"></div>
-              </div>
+          </div>
+          <div class="chart-row">
+            <div class="chart-item full-width">
+              <div id="saldoFinalChart"></div>
             </div>
-            <div class="chart-row">
-              <div class="chart-item full-width">
-                <div id="saldoFinalChart"></div>
-              </div>
-            </div>
+          </div>
         </div>
         <div id="metroSection" class="collapsible-section section">
           <h2>Viajes en Metro</h2>

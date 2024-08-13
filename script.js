@@ -14,6 +14,7 @@ let top10MetrobusStationsChart;
 let ecobiciHeatmapViajes;
 let ecobiciHeatmapTiempo;
 let resultsDataTable;
+let viajesPorHoraChart;
 const colorPalette = {
   "STC": 'rgba(254, 80, 0, 0.8)', // FE5000
   "ECOBICI": 'rgba(0, 154, 68, 0.8)', // #009A44
@@ -230,6 +231,7 @@ function updateSectionContents(data) {
   createPieChart(viajes);
   createLineChart(viajes);
   createStackedBarChart(viajes);
+  crearGraficoViajesPorHoraYOrganismo(viajes);
   createBarChartByMomentoDia(viajes);
   populateOrganismoSelector(viajes);
   createHeatmap(viajes);
@@ -423,6 +425,7 @@ function processViajes(data) {
           const days = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
           item.dayOfWeek = days[date.getDay()]; // Calcula el día de la semana
           item.momento_dia = getMomentoDia(hora); // Calcula el momento del día
+          item.hora = hora;
           return item;
       });
 }
@@ -795,6 +798,78 @@ function createBarChartByMomentoDia(viajes) {
 
   barChartMomentoDia = new ApexCharts(document.getElementById('barChartMomentoDia'), options);
   barChartMomentoDia.render();
+}
+
+function procesarViajesPorHoraYOrganismo(viajes) {
+  const organismos = [...new Set(viajes.map(v => v.organismo))];
+  const viajesPorHoraYOrganismo = organismos.reduce((acc, org) => {
+    acc[org] = Array(24).fill(0);
+    return acc;
+  }, {});
+
+  viajes.forEach(viaje => {
+    viajesPorHoraYOrganismo[viaje.organismo][viaje.hora] += 1;
+  });
+
+  return { organismos, viajesPorHoraYOrganismo };
+}
+
+// Función para crear el gráfico
+function crearGraficoViajesPorHoraYOrganismo(viajes) {
+  const { organismos, viajesPorHoraYOrganismo } = procesarViajesPorHoraYOrganismo(viajes);
+  console.log(organismos, viajesPorHoraYOrganismo);
+  const series = organismos.map(org => ({
+    name: org,
+    data: viajesPorHoraYOrganismo[org],
+    color: colorPalette[org]
+  }));
+
+  const options = {
+    chart: {
+      type: 'bar',
+      height: 350,
+      stacked: true
+    },
+    series: series,
+    xaxis: {
+      categories: Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0') + ':00'),
+      title: {
+        text: 'Hora del día'
+      }
+    },
+    yaxis: {
+      title: {
+        text: 'Número de viajes'
+      }
+    },
+    title: {
+      text: 'Viajes por hora del día y sistema de transporte',
+      align: 'center'
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+      }
+    },
+    dataLabels: {
+      enabled: true
+    },
+    colors: series.map(s => s.color),
+    legend: {
+      position: 'right',
+      offsetY: 40
+    },
+    fill: {
+      opacity: 1
+    }
+  };
+
+  if (viajesPorHoraChart) {
+    viajesPorHoraChart.destroy();
+  }
+
+  viajesPorHoraChart = new ApexCharts(document.querySelector("#viajesPorHora"), options);
+  viajesPorHoraChart.render();
 }
 
 function createHeatmap(viajes, selectedOrganismo = 'Todos') {
