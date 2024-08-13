@@ -454,7 +454,11 @@ function getEcobiciStats(inicioViaje, finViaje) {
   document.getElementById('tiempoPromedioEcobici').textContent = `${tiempoPromedio.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})} minutos`;
   document.getElementById('estacionesVisitadas').textContent = estacionesUnicas.size;
 
-}
+  document.querySelectorAll(`#ecobiciStatsContainer p`).forEach((p) => {
+    p.parentElement.style.setProperty('background-color', colorPalette['ECOBICI'].replace(/[\d\.]+\)$/g, '0.5)'));
+  }
+  );
+  }
 
 function getMetroStats(data, organismo = 'STC') {
   const totalViajes = data.length;
@@ -479,6 +483,12 @@ function getMetroStats(data, organismo = 'STC') {
   document.getElementById(`estacionesVisitadas${elementId}`).textContent = estacionesUnicas.size;
   document.getElementById(`diasUso${elementId}`).textContent = fechasUnicas.size;
   document.getElementById(`montoGastado${elementId}`).textContent = `$${gastoTotal.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+
+  document.querySelectorAll(`#${elementId}StatsContainer p`).forEach((p) => {
+    console.log((colorPalette[organismo], 0.8));
+    p.parentElement.style.setProperty('background-color', colorPalette[organismo].replace(/[\d\.]+\)$/g, '0.5)'));
+  }
+  );
 }
 
 function generateRandomColor() {
