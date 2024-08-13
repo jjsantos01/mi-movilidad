@@ -273,6 +273,7 @@ function updateEcobiciSection(inicioViaje, finViaje) {
   getEcobiciStats(inicioViaje, finViaje);
   createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes');
   createEcobiciHeatmap(inicioViaje, finViaje, tipo='tiempo');
+  createEcobiciMap(inicioViaje, finViaje);
 }
 
 function showLoadingMessage() {
@@ -1307,6 +1308,50 @@ function createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes') {
       ecobiciHeatmapTiempo = new ApexCharts(document.querySelector(`#ecobici-${tipo}`), options);
       ecobiciHeatmapTiempo.render();
     }
+}
+
+function createEcobiciMap(inicioViaje, finViaje) {
+  initializeMap('Ecobici', 19.389688, -99.167158, 13);
+
+  const viajesEstacionesInicio = inicioViaje.reduce((acc, viaje) => {
+    acc[viaje.estacion] = (acc[viaje.estacion] || 0) + 1;
+    return acc;
+  }, {});
+
+  const viajesEstacionesFin = finViaje.reduce((acc, viaje) => {
+    acc[viaje.estacion] = (acc[viaje.estacion] || 0) + 1;
+    return acc;
+  } , {});
+
+  // Cargar y mostrar las estaciones del metro
+  fetch('maps/cicloestaciones_ecobici.geojson')
+  .then(response => response.json())
+  .then(ecobici => {
+  L.geoJSON(ecobici, {
+    pointToLayer: function (feature, latlng) {
+    var nombreEstacion = feature.properties.estacion;
+    var numViajes = (viajesEstacionesInicio[nombreEstacion] || 0) + (viajesEstacionesFin[nombreEstacion] || 0);
+    if (numViajes > 0) {
+    return L.circleMarker(latlng, {
+      radius: Math.min(numViajes, 20),  // Ajustar el factor de escala según sea necesario
+      color: "green",
+      fillColor: "green",
+      fillOpacity: 0.8
+    }).bindPopup("<strong>" + feature.properties.estacion +
+       "</strong><br>Total viajes: " + numViajes +
+       "<br> inicio de viaje: " + (viajesEstacionesInicio[nombreEstacion] || 0) +
+        "<br> fin de viaje: " + (viajesEstacionesFin[nombreEstacion] || 0)
+      );
+  }
+  },
+  onEachFeature: function(feature, layer) {
+    if (feature.properties && feature.properties.estacion) {
+      hoverPopup(layer);
+    }
+  }
+  }).addTo(window.mapInstances['mapEcobici']);
+  })
+  .catch(error => console.error('Error al cargar las estaciones de ecobici', error));
 }
 
 function parseDateTime(dateTimeString) {
