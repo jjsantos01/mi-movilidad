@@ -53,23 +53,6 @@ const sistemas = {
   "RTP": "RTP"
 }
 
-async function processSubmit() {
-  data = [];
-  showLoadingMessage();
-  const serie = serieInput.value.trim();
-  const anio = document.getElementById('yearSelect').value;
-  if (serie) {
-      try {
-          data = await fetchData(serie, anio);
-          updateSectionContents(data);
-      } catch (error) {
-          console.error('Error:', error);
-          alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
-          document.getElementById('loadingMessage').remove();
-      }
-  }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('searchForm');
   serieInput = document.getElementById('serieInput');
@@ -147,6 +130,24 @@ document.getElementById('downloadJSON').addEventListener('click', function() {
     // Eliminar el enlace del documento
     document.body.removeChild(link);
 });
+
+async function processSubmit() {
+  data = [];
+  showLoadingMessage();
+  const serie = serieInput.value.trim();
+  const anio = document.getElementById('yearSelect').value;
+  if (serie) {
+      try {
+          data = await fetchData(serie, anio);
+          updateSectionContents(data);
+      } catch (error) {
+          console.error('Error:', error);
+          alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
+          document.getElementById('loadingMessage').remove();
+      }
+  }
+}
+
 
 function setupCollapsibleSections() {
   const sections = document.querySelectorAll('.collapsible-section h2');
@@ -255,12 +256,14 @@ function updateSection(sectionId, data, updateFunction) {
 }
 
 function updateMetroSection(metro) {
+  getMetroStats(metro, 'STC');
   createTop10MetroLinesChart(metro, 'STC');
   createTop10MetroStationsChart(metro, 'STC');
   createMetroMap(metro);
 }
 
 function updateMetrobusSection(metrobus) {
+  getMetroStats(metrobus, 'METROBÚS');
   createTop10MetroLinesChart(metrobus, 'METROBÚS');
   createTop10MetroStationsChart(metrobus, 'METROBÚS');
   createMetroMap(metrobus, 'METROBÚS');
@@ -451,6 +454,31 @@ function getEcobiciStats(inicioViaje, finViaje) {
   document.getElementById('tiempoPromedioEcobici').textContent = `${tiempoPromedio.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})} minutos`;
   document.getElementById('estacionesVisitadas').textContent = estacionesUnicas.size;
 
+}
+
+function getMetroStats(data, organismo = 'STC') {
+  const totalViajes = data.length;
+  const estacionesUnicas = new Set(data.map(viaje => viaje.estacion));
+  const fechasUnicas = new Set(data.map(viaje => viaje.fecha.split(' ')[0]));
+  const gastoTotal = data.reduce((total, viaje) => {
+    if (viaje.operacion === '03-VALIDACION') {
+        return total + parseFloat(viaje.monto);
+    }
+    return total;
+  }, 0);
+
+  if (organismo === 'STC') {
+    elementId = 'Metro';
+  } else if (organismo === 'METROBÚS') {
+    elementId = 'Metrobus';
+  } else {
+    console.log('Organismo no encontrado');
+  }
+
+  document.getElementById(`totalViajes${elementId}`).textContent = totalViajes.toLocaleString();
+  document.getElementById(`estacionesVisitadas${elementId}`).textContent = estacionesUnicas.size;
+  document.getElementById(`diasUso${elementId}`).textContent = fechasUnicas.size;
+  document.getElementById(`montoGastado${elementId}`).textContent = `$${gastoTotal.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
 }
 
 function generateRandomColor() {
