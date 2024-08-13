@@ -485,7 +485,6 @@ function getMetroStats(data, organismo = 'STC') {
   document.getElementById(`montoGastado${elementId}`).textContent = `$${gastoTotal.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
 
   document.querySelectorAll(`#${elementId}StatsContainer p`).forEach((p) => {
-    console.log((colorPalette[organismo], 0.8));
     p.parentElement.style.setProperty('background-color', colorPalette[organismo].replace(/[\d\.]+\)$/g, '0.5)'));
   }
   );
