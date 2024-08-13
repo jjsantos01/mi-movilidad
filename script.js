@@ -817,7 +817,6 @@ function procesarViajesPorHoraYOrganismo(viajes) {
 // Función para crear el gráfico
 function crearGraficoViajesPorHoraYOrganismo(viajes) {
   const { organismos, viajesPorHoraYOrganismo } = procesarViajesPorHoraYOrganismo(viajes);
-  console.log(organismos, viajesPorHoraYOrganismo);
   const series = organismos.map(org => ({
     name: org,
     data: viajesPorHoraYOrganismo[org],
