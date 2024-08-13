@@ -127,17 +127,22 @@ tr:hover {
   height: 600px;
   width: 100%;
 }
-#statsContainer {
+.stats-container {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: space-around;
-  margin-bottom: 20px;
+  align-items: stretch;
 }
 .stat-box {
+  flex: 1 1 30%;  /* Esto permite que crezcan y se encojan, con un tamaño base del 30% */
+  min-width: 200px;
   background-color: #fff;
   border-radius: 5px;
   padding: 15px;
   text-align: center;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   width: 45%;
+  margin: 10px;
 }
 .stat-box h3 {
   margin-top: 0;
@@ -148,6 +153,12 @@ tr:hover {
   font-weight: bold;
   color: #007bff;
   margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+  .stat-box {
+    flex: 1 1 100%;  /* En pantallas muy pequeñas, hacer que ocupen todo el ancho */
+  }
 }
 #chartContainer {
   background: #fff;

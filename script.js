@@ -53,6 +53,23 @@ const sistemas = {
   "RTP": "RTP"
 }
 
+async function processSubmit() {
+  data = [];
+  showLoadingMessage();
+  const serie = serieInput.value.trim();
+  const anio = document.getElementById('yearSelect').value;
+  if (serie) {
+      try {
+          data = await fetchData(serie, anio);
+          updateSectionContents(data);
+      } catch (error) {
+          console.error('Error:', error);
+          alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
+          document.getElementById('loadingMessage').remove();
+      }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('searchForm');
   serieInput = document.getElementById('serieInput');
@@ -61,20 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      data = [];
-      showLoadingMessage();
-      const serie = serieInput.value.trim();
-      const anio = document.getElementById('yearSelect').value;
-      if (serie) {
-          try {
-              data = await fetchData(serie, anio);
-              updateSectionContents(data);
-          } catch (error) {
-              console.error('Error:', error);
-              alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
-              document.getElementById('loadingMessage').remove();
-          }
-      }
+      processSubmit();
   });
 
   const infoIcon = document.getElementById('yearInfo');
@@ -263,6 +267,7 @@ function updateMetrobusSection(metrobus) {
 }
 
 function updateEcobiciSection(inicioViaje, finViaje) {
+  getEcobiciStats(inicioViaje, finViaje);
   createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes');
   createEcobiciHeatmap(inicioViaje, finViaje, tipo='tiempo');
 }
@@ -416,6 +421,36 @@ function processViajes(data) {
           item.momento_dia = getMomentoDia(hora); // Calcula el momento del día
           return item;
       });
+}
+
+function getEcobiciStats(inicioViaje, finViaje) {
+  let totalViajes = 0;
+  let tiempoTotal = 0;
+  const estacionesUnicas = new Set();
+
+  inicioViaje.forEach(inicio => {
+    const fin = finViaje.find(f => f.numero === inicio.numero - 1);
+    if (fin) {
+      const fechaInicio = parseDateTime(inicio.fecha);
+      const fechaFin = parseDateTime(fin.fecha);
+
+      const tiempoViaje = (fechaFin - fechaInicio) / (1000 * 60); // Tiempo en minutos
+
+      if (tiempoViaje > 0) {
+        totalViajes++;
+        tiempoTotal += tiempoViaje;
+        estacionesUnicas.add(inicio.estacion);
+        estacionesUnicas.add(fin.estacion);
+      }
+    }
+  });
+
+  const tiempoPromedio = totalViajes > 0 ? tiempoTotal / totalViajes : 0;
+  document.getElementById('totalViajesEcobici').textContent = totalViajes.toLocaleString();
+  document.getElementById('totalTiempoEcobici').textContent = `${tiempoTotal.toLocaleString()} minutos`;
+  document.getElementById('tiempoPromedioEcobici').textContent = `${tiempoPromedio.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})} minutos`;
+  document.getElementById('estacionesVisitadas').textContent = estacionesUnicas.size;
+
 }
 
 function generateRandomColor() {

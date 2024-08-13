@@ -46,7 +46,7 @@
         <div id="infoPopup" class="popup">
           Los datos dependen de la página de trazabilidad MI de la SEMOVI, que puede ser lenta e inestable lo que arroja errores cuando hay alto tráfico. Puedes intentar más tarde o revisar la <a href="https://app.semovi.cdmx.gob.mx/MI_movilidad/trazabilidad" target="_blank">página oficial</a>.
         </div>
-        <div id="statsContainer" class="section">
+        <div id="statsContainer" class="section stats-container">
           <div class="stat-box">
               <h3>Total de Viajes</h3>
               <p id="totalViajes"></p>
@@ -111,8 +111,26 @@
         <div id="ecobiciSection" class="collapsible-section section">
           <h2>Viajes en Ecobici</h2>
           <div class="section-content">
-              <div id="ecobici-viajes" class="chart-container"></div>
-              <div id="ecobici-tiempo" class="chart-container"></div>
+            <div id="EcobiciStatsContainer" class="stats-container">
+              <div class="stat-box">
+                  <h3>Total de viajes en Ecobici 🚲</h3>
+                  <p id="totalViajesEcobici"></p>
+              </div>
+              <div class="stat-box">
+                <h3>Estaciones que visitaste 🚲</h3>
+                <p id="estacionesVisitadas"></p>
+              </div>
+              <div class="stat-box">
+                  <h3>Tiempo total de tus viajes 🚲</h3>
+                  <p id="totalTiempoEcobici"></p>
+              </div>
+              <div class="stat-box">
+                  <h3>Duración promedio de viajes 🚲</h3>
+                  <p id="tiempoPromedioEcobici"></p>
+              </div>
+            </div>
+            <div id="ecobici-viajes" class="chart-container"></div>
+            <div id="ecobici-tiempo" class="chart-container"></div>
           </div>
         </div>
         <div id="results" class="section">
