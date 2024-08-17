@@ -1341,6 +1341,7 @@ function createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes') {
   const seriesMap = convertDataToHeatmapSeries(processedData, estaciones);
   const ordenEstaciones = seriesMap.map(s => s.name);
   const prefixTitle = tipo === 'viajes' ? 'Número de viajes' : 'Tiempo promedio de viaje';
+  const prefixUnit = tipo === 'viajes' ? 'viajes' : 'minutos';
 
   // Configurar y crear el gráfico
   const options = {
@@ -1366,7 +1367,14 @@ function createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes') {
       },
       yaxis: {
           categories: ordenEstaciones
-      }
+      },
+      tooltip: {
+          y: {
+              formatter: function (value) {
+                  return `${value} ${prefixUnit}`;
+              }
+          }
+      },
   };
 
   if (tipo === 'viajes'){
