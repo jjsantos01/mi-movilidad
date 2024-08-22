@@ -15,6 +15,8 @@ let ecobiciHeatmapViajes;
 let ecobiciHeatmapTiempo;
 let resultsDataTable;
 let viajesPorHoraChart;
+let ecobiciViajes;
+
 const colorPalette = {
   "STC": 'rgba(254, 80, 0, 0.8)', // FE5000
   "ECOBICI": 'rgba(0, 154, 68, 0.8)', // #009A44
@@ -224,6 +226,8 @@ function updateSectionContents(data) {
   const ecobici = data.filter(d => d.organismo === 'ECOBICI');
   const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
   const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
+  ecobiciViajes = matchInicioFinViaje(inicioViaje, finViaje);
+  console.log(ecobiciViajes);
   showAllSections();
   // Actualizar gráficos y estadísticas generales
   getTotalViajes(viajes);
@@ -814,7 +818,6 @@ function procesarViajesPorHoraYOrganismo(viajes) {
   return { organismos, viajesPorHoraYOrganismo };
 }
 
-// Función para crear el gráfico
 function crearGraficoViajesPorHoraYOrganismo(viajes) {
   const { organismos, viajesPorHoraYOrganismo } = procesarViajesPorHoraYOrganismo(viajes);
   const series = organismos.map(org => ({
@@ -1434,6 +1437,27 @@ function createEcobiciMap(inicioViaje, finViaje) {
   }).addTo(window.mapInstances['mapEcobici']);
   })
   .catch(error => console.error('Error al cargar las estaciones de ecobici', error));
+}
+
+function matchInicioFinViaje(inicioViaje, finViaje) {
+  return inicioViaje.map(inicio => {
+    const fin = finViaje.find(f => f.numero === inicio.numero - 1);
+    if (fin) {
+      const estacionInicio = inicio.estacion;
+      const estacionFin = fin.estacion;
+      const fechaInicio = parseDateTime(inicio.fecha);
+      const fechaFin = parseDateTime(fin.fecha);
+      const duracion = Math.round((fechaFin - fechaInicio) / 60000); // Diferencia en minutos
+      return {
+        estacionInicio,
+        estacionFin,
+        fechaInicio,
+        fechaFin,
+        duracion
+      };
+    }
+    return null;
+  }).filter(viaje => viaje !== null);
 }
 
 function parseDateTime(dateTimeString) {
