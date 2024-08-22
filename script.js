@@ -285,11 +285,12 @@ function updateMetrobusSection(metrobus) {
   createMetroMap(metrobus, 'METROBÚS');
 }
 
-function updateEcobiciSection(inicioViaje, finViaje) {
+async function updateEcobiciSection(inicioViaje, finViaje) {
   getEcobiciStats(inicioViaje, finViaje);
   createEcobiciHeatmap(inicioViaje, finViaje, tipo='viajes');
   createEcobiciHeatmap(inicioViaje, finViaje, tipo='tiempo');
   createEcobiciMap(inicioViaje, finViaje);
+  await createSVG();
 }
 
 function showLoadingMessage() {
