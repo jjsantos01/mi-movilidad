@@ -161,7 +161,6 @@ async function testContent() {
   updateSectionContents(data);
 }
 
-
 function setupCollapsibleSections() {
   const sections = document.querySelectorAll('.collapsible-section h2');
   sections.forEach(section => {
@@ -1408,12 +1407,12 @@ function createEcobiciMap(inicioViaje, finViaje) {
   initializeMap('Ecobici', 19.389688, -99.167158, 13);
 
   const viajesEstacionesInicio = inicioViaje.reduce((acc, viaje) => {
-    acc[viaje.estacion] = (acc[viaje.estacion] || 0) + 1;
+    acc[homogenizeString(viaje.estacion)] = (acc[homogenizeString(viaje.estacion)] || 0) + 1;
     return acc;
   }, {});
 
   const viajesEstacionesFin = finViaje.reduce((acc, viaje) => {
-    acc[viaje.estacion] = (acc[viaje.estacion] || 0) + 1;
+    acc[homogenizeString(viaje.estacion)] = (acc[homogenizeString(viaje.estacion)] || 0) + 1;
     return acc;
   } , {});
 
@@ -1423,7 +1422,7 @@ function createEcobiciMap(inicioViaje, finViaje) {
   .then(ecobici => {
   L.geoJSON(ecobici, {
     pointToLayer: function (feature, latlng) {
-    var nombreEstacion = feature.properties.estacion;
+    var nombreEstacion = homogenizeString(feature.properties.estacion);
     var numViajes = (viajesEstacionesInicio[nombreEstacion] || 0) + (viajesEstacionesFin[nombreEstacion] || 0);
     if (numViajes > 0) {
     return L.circleMarker(latlng, {
@@ -1509,4 +1508,14 @@ window.onclick = function(event) {
   if (event.target == document.getElementById('aboutModal')) {
     closeAboutModal();
   }
+}
+
+function homogenizeString(str) {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
