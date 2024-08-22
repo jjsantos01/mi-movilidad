@@ -82,6 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
           popup.style.display = 'none';
       }
   });
+
+  if (!prod) {
+    testContent();
+  }
 });
 
 document.getElementById('downloadCSV').addEventListener('click', function() {
@@ -149,6 +153,12 @@ async function processSubmit() {
           document.getElementById('loadingMessage').remove();
       }
   }
+}
+
+async function testContent() {
+  showLoadingMessage();
+  data = await fetchTestdata();
+  updateSectionContents(data);
 }
 
 
@@ -285,10 +295,8 @@ function updateEcobiciSection(inicioViaje, finViaje) {
 function showLoadingMessage() {
   const sections = document.querySelectorAll('.section');
   sections.forEach(section => { section.style.display = 'none'; });
-  const loadingMessage = document.createElement('div');
-  loadingMessage.id = 'loadingMessage';
+  const loadingMessage = document.getElementById('loadingMessage');
   loadingMessage.innerText = 'Espere mientras se cargan sus datos...';
-  document.body.appendChild(loadingMessage);
 }
 
 function showAllSections() {
@@ -303,36 +311,36 @@ function showAllSections() {
       }
      });
     // Eliminar el mensaje de carga
-    document.getElementById('loadingMessage').remove();
+    document.getElementById('loadingMessage').innerHTML = "";
 }
 
 async function fetchData(serie, anio) {
-  if (prod) {
-      const response = await fetch('https://app.semovi.cdmx.gob.mx/micrositio/291-trazabilidad_tarjetas.php', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'Origin': 'https://app.semovi.cdmx.gob.mx',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-          },
-          body: JSON.stringify({
-              serie: serie,
-              anio: anio,
-              operacion: 'todas',
-          }),
-      });
+  const response = await fetch('https://app.semovi.cdmx.gob.mx/micrositio/291-trazabilidad_tarjetas.php', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+          'Origin': 'https://app.semovi.cdmx.gob.mx',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      },
+      body: JSON.stringify({
+          serie: serie,
+          anio: anio,
+          operacion: 'todas',
+      }),
+  });
 
-      if (!response.ok) {
-          throw new Error('Network response was not ok');
-      }
-
-      const jsonResponse = await response.json();
-      return jsonResponse.data;
-  } else {
-      const response = await fetch('http://localhost:8000/datos/data.json');
-      const data = await response.json();
-      return data.data //.filter(item => item.serie === serie);
+  if (!response.ok) {
+      throw new Error('Network response was not ok');
   }
+
+  const jsonResponse = await response.json();
+  return jsonResponse.data;
+}
+
+async function fetchTestdata() {
+  const response = await fetch('http://localhost:8000/datos/data.json');
+  const data = await response.json();
+  return data.data //.filter(item => item.serie === serie);
 }
 
 function createMetroObject(viajes, selectedOrganismo = 'STC') {
