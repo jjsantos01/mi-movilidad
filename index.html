@@ -187,6 +187,17 @@
                 <button id="previousFrame" style="display: none;">Previo</button>
                 <button id="nextFrame" style="display: none;">Siguiente</button>
               </div>
+              <div>
+                <label for="animationSpeed">Velocidad:</label>
+                <input type="range" id="animationSpeed" name="speed" value=1 list="speedValues" min="0" max="4" step="1"/>
+                <datalist id="speedValues">
+                  <option value="0"></option>
+                  <option value="1"></option>
+                  <option value="2"></option>
+                  <option value="3"></option>
+                  <option value="4"></option>
+                </datalist>
+              </div>
               <div id="visualization" class="svg-container"></div>
             </div>
           </div>

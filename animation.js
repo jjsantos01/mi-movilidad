@@ -11,6 +11,7 @@ let animate;
 let g;
 let estaciones;
 let projection;
+let speedAnimation;
 
 const widthSVG = 800;
 const heightSVG = 600;
@@ -20,7 +21,7 @@ async function createSVG(){
   if (svg){
     svg.remove();
   }
-  
+
   svg = d3.select('.svg-container')
   .append('svg')
   .attr('preserveAspectRatio', 'xMinYMin meet')
@@ -216,7 +217,9 @@ async function startAnimation(ecobiciViajes) {
       showButtons();
   }
 
-  runAnimate = function runAnimate(ms=70) {
+  runAnimate = function runAnimate() {
+    speed = parseFloat(document.getElementById('animationSpeed').value);
+    const ms = (200 / Math.pow(1.5, speed));
     if ((currentFrame < ecobiciViajes.length - 1) && (isPlaying)) {
       currentFrame++;
       animate();

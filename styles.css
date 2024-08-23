@@ -292,3 +292,8 @@ footer a:hover {
   margin: 20px auto; /* Centrado y margen superior/inferior */
   text-align: center; /* Texto centrado */
 }
+
+input[type="range"] {
+  width: 200px;
+  margin: 0;
+}
