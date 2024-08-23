@@ -12,6 +12,8 @@ let g;
 let estaciones;
 let projection;
 let speedAnimation;
+let lastAddedArrow;
+let rutasConteo;
 
 const widthSVG = 800;
 const heightSVG = 600;
@@ -131,7 +133,7 @@ async function startAnimation(ecobiciViajes) {
       .style('stroke', 'none');
 
   // Crear un objeto para almacenar el recuento de viajes por ruta
-  const rutasConteo = {};
+  rutasConteo = {};
 
   // Función para obtener la clave única de una ruta
   function getRutaKey(inicio, fin) {
@@ -144,16 +146,20 @@ async function startAnimation(ecobiciViajes) {
 
   // Función para actualizar la intensidad de color de las flechas
   function updateArrowIntensities() {
-      const maxViajes = Math.max(...Object.values(rutasConteo));
-      colorScale.domain([0, maxViajes]);
+    const maxViajes = Math.max(...Object.values(rutasConteo));
+    colorScale.domain([0, maxViajes]);
 
-      arrowsGroup.selectAll('line').each(function() {
-          const arrow = d3.select(this);
-          const rutaKey = arrow.attr('data-ruta');
-          const viajes = rutasConteo[rutaKey] || 0;
-          arrow.attr('stroke', colorScale(viajes))
-              .attr('stroke-opacity', 0.7);
-      });
+    arrowsGroup.selectAll('line').each(function() {
+        const arrow = d3.select(this);
+        // Comprueba si esta flecha es la última añadida
+        if (this !== lastAddedArrow) {
+            const rutaKey = arrow.attr('data-ruta');
+            const viajes = rutasConteo[rutaKey] || 0;
+            arrow.attr('stroke', colorScale(viajes))
+                .attr('stroke-opacity', 0.7)
+                .attr('stroke-width', 2);
+        }
+    });
   }
 
   // Crear un div para el popup
@@ -189,7 +195,8 @@ async function startAnimation(ecobiciViajes) {
               .attr('y1', start[1])
               .attr('x2', end[0])
               .attr('y2', end[1])
-              .attr('stroke-width', 2)
+              .attr('stroke-width', 4)
+              .attr('stroke', 'black')
               .attr('marker-end', 'url(#arrowhead)')
               .on('mouseover', function(event) {
                   const mouseX = event.pageX;
@@ -199,14 +206,16 @@ async function startAnimation(ecobiciViajes) {
                       .duration(200)
                       .style('opacity', .9);
                   popup.html(`Origen: ${viaje.estacionInicio}<br>Destino: ${viaje.estacionFin}<br>Viajes: ${rutasConteo[rutaKey]}`)
-                      .style('left', (mouseX - svgRect.left + 10) + 'px')
-                      .style('top', (mouseY - svgRect.top - 28) + 'px');
+                      .style('left', (mouseX - svgRect.left + 5) + 'px')
+                      .style('top', (mouseY - svgRect.top - 14) + 'px');
               })
               .on('mouseout', function() {
                   popup.transition()
                       .duration(500)
                       .style('opacity', 0);
               });
+
+        lastAddedArrow = newArrow.node();
       }
 
       updateArrowIntensities();
@@ -280,6 +289,7 @@ function prevFrame() {
     const oldFrame = currentFrame;
     currentFrame = 0;
     g.selectAll('line').remove();
+    rutasConteo = {};
 
     ecobiciViajes.slice(0, oldFrame).forEach((viaje, i) => {
       currentFrame = i;
