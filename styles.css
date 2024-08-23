@@ -297,3 +297,33 @@ input[type="range"] {
   width: 200px;
   margin: 0;
 }
+
+button:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+/* Estilos para los botones cuando están deshabilitados */
+button:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Estilos específicos para el botón de pausa/continuar */
+#pauseAnimation {
+  background-color: #008CBA; /* Color azul */
+}
+
+#pauseAnimation:hover:not(:disabled) {
+  background-color: #007B9A;
+}
+
+/* Estilos específicos para el botón de detener */
+#stopAnimation {
+  background-color: #f44336; /* Color rojo */
+}
+
+#stopAnimation:hover:not(:disabled) {
+  background-color: #da190b;
+}

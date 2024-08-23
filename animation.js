@@ -174,7 +174,7 @@ async function startAnimation(ecobiciViajes) {
 
   animate = function animate() {
     console.log('currentFrame:', currentFrame);
-    showButtons();
+    updateButtonState();
     if (currentFrame >= ecobiciViajes.length) {
       isPlaying = false;
       return;
@@ -223,7 +223,7 @@ async function startAnimation(ecobiciViajes) {
       title.text(`Viaje de estación ${viaje.estacionInicio} a ${viaje.estacionFin}`);
       counter.text(`Total de viajes: ${currentFrame + 1}`);
       fecha.text(`Hora y duración: ${viaje.fechaInicio.toISOString().slice(0, 19)} (${viaje.duracion} minutos)`);
-      showButtons();
+      updateButtonState();
   }
 
   runAnimate = function runAnimate() {
@@ -235,35 +235,30 @@ async function startAnimation(ecobiciViajes) {
       delay(ms).then(runAnimate);
     } else {
       isPlaying = false;
-      showButtons();
+      updateButtonState();
     }
   }
   runAnimate();
 }
 
-function showButtons() {
+function updateButtonState() {
   if (isPlaying) {
-    pauseButton.style.display = 'inline';
+    pauseButton.disabled = false;
     pauseButton.textContent = 'Pausa';
-    prevButton.style.display = 'none';
-    nextButton.style.display = 'none';
+    prevButton.disabled = true;
+    nextButton.disabled = true;
   } else {
-      if (currentFrame <= ecobiciViajes.length - 2) {
-        nextButton.style.display = 'inline';
-        prevButton.style.display = 'inline';
-        pauseButton.style.display = 'inline';
-        pauseButton.textContent = 'Continuar';
-      } else if (currentFrame >= ecobiciViajes.length - 1){
-        prevButton.style.display = 'inline';
-        pauseButton.style.display = 'none';
-        nextButton.style.display = 'none';
-      } else {
-        prevButton.style.display = 'none';
-        nextButton.style.display = 'none';
-        prevButton.style.display = 'none';
-      }
+    if (currentFrame < ecobiciViajes.length - 1) {
+      nextButton.disabled = false;
+      prevButton.disabled = currentFrame === 0;
+      pauseButton.disabled = false;
+      pauseButton.textContent = 'Continuar';
+    } else if (currentFrame >= ecobiciViajes.length - 1) {
+      prevButton.disabled = false;
+      pauseButton.disabled = true;
+      nextButton.disabled = true;
+    }
   }
-
 }
 
 function togglePause() {
@@ -276,7 +271,7 @@ function togglePause() {
 
 function pauseAnimation() {
   isPlaying = false;
-  showButtons();
+  updateButtonState();
 }
 
 function resumeAnimation() {
@@ -304,7 +299,7 @@ function nextFrame() {
     currentFrame++;
     animate();
   } else {
-    showButtons();
+    updateButtonState();
   }
 }
 
