@@ -56,32 +56,35 @@ const sistemas = {
   "RTP": "RTP"
 }
 
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
 document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('searchForm');
-  serieInput = document.getElementById('serieInput');
+  // const form = document.getElementById('searchForm');
+  // serieInput = document.getElementById('serieInput');
   window.mapInstances = {};
   setupCollapsibleSections();
 
-  form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      processSubmit();
-  });
+  // form.addEventListener('submit', async (e) => {
+  //     e.preventDefault();
+  //     processSubmit();
+  // });
 
-  const infoIcon = document.getElementById('yearInfo');
-  const popup = document.getElementById('infoPopup');
+  // const infoIcon = document.getElementById('yearInfo');
+  // const popup = document.getElementById('infoPopup');
 
-  infoIcon.addEventListener('click', function(e) {
-      e.preventDefault();
-      popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
-      popup.style.top = (e.clientY + 10) + 'px';
-      popup.style.left = (e.clientX + 10) + 'px';
-  });
+  // infoIcon.addEventListener('click', function(e) {
+  //     e.preventDefault();
+  //     popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+  //     popup.style.top = (e.clientY + 10) + 'px';
+  //     popup.style.left = (e.clientX + 10) + 'px';
+  // });
 
-  document.addEventListener('click', function(e) {
-      if (e.target !== infoIcon && !popup.contains(e.target)) {
-          popup.style.display = 'none';
-      }
-  });
+  // document.addEventListener('click', function(e) {
+  //     if (e.target !== infoIcon && !popup.contains(e.target)) {
+  //         popup.style.display = 'none';
+  //     }
+  // });
 
   if (!prod) {
     testContent();
@@ -90,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.getElementById('downloadCSV').addEventListener('click', function() {
   // Convierte los datos a CSV
+  const serie = data[0]["num_serie"].slice(-8)
   const csv = convertDataToCSV(data);
 
   // Crear un Blob con el contenido CSV
@@ -99,7 +103,7 @@ document.getElementById('downloadCSV').addEventListener('click', function() {
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
   link.setAttribute("href", url);
-  link.setAttribute("download", `datos-MI-${serieInput.value.trim()}.csv`);
+  link.setAttribute("download", `datos-MI-${serie}.csv`);
   link.style.visibility = 'hidden';
 
   // Añadir el enlace al documento y simular un clic
@@ -118,6 +122,7 @@ document.getElementById('downloadCSV').addEventListener('click', function() {
 
 document.getElementById('downloadJSON').addEventListener('click', function() {
     // Convertir el objeto data a una cadena JSON
+    const serie = data[0]["num_serie"].slice(-8)
     const json = JSON.stringify(data, null, 2); // El parámetro '2' es para formatear el JSON con indentación
 
     // Crear un Blob con el contenido JSON
@@ -127,7 +132,7 @@ document.getElementById('downloadJSON').addEventListener('click', function() {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `datos-MI-${serieInput.value.trim()}.json`);
+    link.setAttribute("download", `datos-MI-${serie}.json`);
     link.style.visibility = 'hidden';
 
     // Añadir el enlace al documento y simular un clic
@@ -138,27 +143,112 @@ document.getElementById('downloadJSON').addEventListener('click', function() {
     document.body.removeChild(link);
 });
 
-async function processSubmit() {
-  data = [];
-  showLoadingMessage();
-  const serie = serieInput.value.trim();
-  const anio = document.getElementById('yearSelect').value;
-  if (serie) {
-      try {
-          data = await fetchData(serie, anio);
-          updateSectionContents(data);
-      } catch (error) {
-          console.error('Error:', error);
-          alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
-          document.getElementById('loadingMessage').remove();
-      }
+function excelToJson(file) {
+  return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 1 });
+
+          const transformedData = jsonData.map((row, index) => ({
+              numero: jsonData.length - index,
+              num_serie: row['Núm Serie'],
+              organismo: row['Organismo'],
+              linea: row['Línea'],
+              estacion: row['Estación'],
+              operacion: row['Operación'],
+              monto: row['Monto'].toString(),
+              saldo_final: row['Saldo Final'].toString(),
+              fecha: row['Fecha Hora']
+          }));
+
+          resolve({ data: transformedData });
+      };
+
+      reader.onerror = (error) => {
+          reject(error);
+      };
+
+      reader.readAsArrayBuffer(file);
+  });
+}
+
+function handleExcelFile(file) {
+  excelToJson(file)
+      .then(result => {
+        data = result.data;
+        updateSectionContents(data);
+      })
+      .catch(error => {
+          console.error('Error al procesar el archivo:', error);
+          document.getElementById('loadingMessage').textContent = 'Error al procesar el archivo: ' + error.message;
+      });
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const files = e.dataTransfer.files;
+  if (files.length) {
+      handleExcelFile(files[0]);
   }
 }
 
+dropZone.addEventListener('drop', handleDrop);
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('dragover');
+});
+
+dropZone.addEventListener('dragend', () => {
+  dropZone.classList.remove('dragover');
+});
+
+// manejar clic en el dropZone
+dropZone.addEventListener('click', () => {
+  fileInput.click();
+});
+
+// manejar selección de archivo
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files.length) {
+      handleExcelFile(e.target.files[0]);
+  }
+});
+
+// async function processSubmit() {
+//   data = [];
+//   showLoadingMessage();
+//   // const serie = serieInput.value.trim();
+//   // const anio = document.getElementById('yearSelect').value;
+//     try {
+//         data = await fetchData(serie, anio);
+//         updateSectionContents(data);
+//     } catch (error) {
+//         console.error('Error:', error);
+//         alert('Hubo un error al obtener los datos. Por favor, intente de nuevo.');
+//         document.getElementById('loadingMessage').remove();
+//     }
+// }
+
 async function testContent() {
   showLoadingMessage();
-  data = await fetchTestdata();
-  updateSectionContents(data);
+  const response = await fetch('datos/data.xlsx')
+  excelFile = await response.blob();
+  handleExcelFile(excelFile);
 }
 
 function setupCollapsibleSections() {
@@ -236,7 +326,6 @@ function updateSectionContents(data) {
   const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
   const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
   ecobiciViajes = matchInicioFinViaje(inicioViaje, finViaje);
-  console.log(ecobiciViajes);
   showAllSections();
   // Actualizar gráficos y estadísticas generales
   getTotalViajes(viajes);
@@ -337,11 +426,11 @@ async function fetchData(serie, anio) {
   return jsonResponse.data;
 }
 
-async function fetchTestdata() {
-  const response = await fetch('http://localhost:8000/datos/data.json');
-  const data = await response.json();
-  return data.data //.filter(item => item.serie === serie);
-}
+// async function fetchTestdata() {
+//   const response = await fetch('http://localhost:8000/datos/data.json');
+//   const data = await response.json();
+//   return data.data //.filter(item => item.serie === serie);
+// }
 
 function createMetroObject(viajes, selectedOrganismo = 'STC') {
   return viajes.filter(viaje => viaje.organismo === selectedOrganismo);
@@ -370,7 +459,7 @@ function getEcobiciODMeanTime(inicioViaje, finViaje) {
   const viajesMap = new Map();
 
   inicioViaje.forEach(inicio => {
-      const fin = finViaje.find(f => f.numero === inicio.numero - 1);
+      const fin = finViaje.find(f => f.numero === inicio.numero + 1);
       if (fin) {
           const key = `${inicio.estacion}+${fin.estacion}`;
 
@@ -448,7 +537,7 @@ function getEcobiciStats(inicioViaje, finViaje) {
   const estacionesUnicas = new Set();
 
   inicioViaje.forEach(inicio => {
-    const fin = finViaje.find(f => f.numero === inicio.numero - 1);
+    const fin = finViaje.find(f => f.numero === inicio.numero + 1);
     if (fin) {
       const fechaInicio = parseDateTime(inicio.fecha);
       const fechaFin = parseDateTime(fin.fecha);
@@ -463,10 +552,9 @@ function getEcobiciStats(inicioViaje, finViaje) {
       }
     }
   });
-
   const tiempoPromedio = totalViajes > 0 ? tiempoTotal / totalViajes : 0;
   document.getElementById('totalViajesEcobici').textContent = totalViajes.toLocaleString();
-  document.getElementById('totalTiempoEcobici').textContent = `${tiempoTotal.toLocaleString()} minutos`;
+  document.getElementById('totalTiempoEcobici').textContent = `${tiempoTotal.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})} minutos`;
   document.getElementById('tiempoPromedioEcobici').textContent = `${tiempoPromedio.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})} minutos`;
   document.getElementById('estacionesVisitadas').textContent = estacionesUnicas.size;
 
@@ -474,7 +562,7 @@ function getEcobiciStats(inicioViaje, finViaje) {
     p.parentElement.style.setProperty('background-color', colorPalette['ECOBICI'].replace(/[\d\.]+\)$/g, '0.5)'));
   }
   );
-  }
+}
 
 function getMetroStats(data, organismo = 'STC') {
   const totalViajes = data.length;
@@ -1262,7 +1350,9 @@ function createMetroMap(metro, organismo = 'STC') {
 
   // Cargar los datos de viajes (Simulando datos de ejemplo para ilustrar)
   const viajesEstaciones = metro.reduce((acc, viaje) => {
-    acc[viaje.estacion.toLowerCase()] = (acc[viaje.estacion.toLowerCase()] || 0) + 1;
+    if (viaje.estacion) {
+      acc[viaje.estacion.toLowerCase()] = (acc[viaje.estacion.toLowerCase()] || 0) + 1;
+    }
     return acc;
   }, {});
 
@@ -1449,7 +1539,7 @@ function createEcobiciMap(inicioViaje, finViaje) {
 
 function matchInicioFinViaje(inicioViaje, finViaje) {
   return inicioViaje.map(inicio => {
-    const fin = finViaje.find(f => f.numero === inicio.numero - 1);
+    const fin = finViaje.find(f => f.numero === inicio.numero + 1);
     if (fin) {
       const estacionInicio = inicio.estacion;
       const estacionFin = fin.estacion;
