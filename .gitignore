@@ -1,3 +1,4 @@
 datos/
 .ipynb_checkpoints/
 mi-movilidad.ipynb
+.env*
