@@ -17,6 +17,7 @@ let resultsDataTable;
 let viajesPorHoraChart;
 let ecobiciViajes;
 let inconsistentKeys = new Set();
+let inconsistentFilterFn = null;
 
 const colorPalette = {
   "STC": 'rgba(254, 80, 0, 0.8)', // FE5000
@@ -339,6 +340,39 @@ function displayResults(data) {
             // si ocurre un error, no bloquear la UI
         }
 
+        // Configurar checkbox para filtrar solo transacciones inconsistentes
+        try {
+            const checkbox = document.getElementById('showInconsistentCheckbox');
+            if (checkbox) {
+                // Definir la función de filtro una vez
+                inconsistentFilterFn = function(settings, data, dataIndex) {
+                    // Si checkbox no está marcado, dejar pasar todo
+                    if (!document.getElementById('showInconsistentCheckbox').checked) return true;
+                    // Obtener datos de la fila
+                    const row = resultsDataTable.row(dataIndex).data();
+                    if (!row) return false;
+                    const key = `${row.numero}__${row.fecha}`;
+                    return inconsistentKeys.has(key) || !!row._inconsistente;
+                };
+
+                // Listener para activar/desactivar el filtro (solo una vez)
+                if (!checkbox.dataset.inconsListener) {
+                  checkbox.addEventListener('change', function() {
+                      // Remover nuestro filtro por si ya estaba
+                      $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(fn => fn !== inconsistentFilterFn);
+                      if (this.checked) {
+                          // Añadir filtro
+                          $.fn.dataTable.ext.search.push(inconsistentFilterFn);
+                      }
+                      resultsDataTable.draw();
+                  });
+                  checkbox.dataset.inconsListener = '1';
+                }
+            }
+        } catch (e) {
+            console.debug('No se pudo configurar el checkbox de inconsistencias', e);
+        }
+
         resultsTable.style.display = 'table';
     } else {
         // If there's no data, destroy the DataTable if it exists
@@ -636,7 +670,7 @@ function renderWarning(inconsistencias) {
   let html = `<div class="warning-box"><h4>Se detectó ${n} transacci${n === 1 ? 'ón' : 'ones'} con valores cobrados inconsistentes:</h4>`;
   html += '<ul class="warning-list' + '">';
   inconsistencias.forEach(item => {
-    html += `<li>número: ${item.numero}, fecha: ${item.fecha}, monto: ${item.monto}, saldo inicial: ${item.saldo_inicial}, saldo final: ${item.saldo_final}</li>`;
+    html += `<li>número: ${item.numero}, fecha: ${item.fecha}, monto cobrado: ${item.monto}, saldo inicial: ${item.saldo_inicial}, saldo final: ${item.saldo_final}</li>`;
   });
   html += '</ul></div>';
   wc.innerHTML = html;
