@@ -58,6 +58,8 @@
           Los datos dependen de la página de trazabilidad MI de la SEMOVI, que puede ser lenta e inestable lo que arroja errores cuando hay alto tráfico. Puedes intentar más tarde o revisar la <a href="https://app.semovi.cdmx.gob.mx/MI_movilidad/trazabilidad" target="_blank">página oficial</a>.
         </div>-->
         <div id="loadingMessage"></div>
+        <!-- Contenedor para avisos de transacciones indebidas -->
+        <div id="warningContainer"></div>
         <div id="statsContainer" class="section stats-container">
           <div class="stat-box">
               <h3>Total de Viajes</h3>
@@ -215,6 +217,9 @@
           <h2>Explora los registros completos</h2>
           <button id="downloadCSV" class="btn btn-primary">Descargar CSV</button>
           <button id="downloadJSON" class="btn btn-primary">Descargar JSON</button>
+          <label style="margin-left:12px; font-weight: normal;">
+            <input type="checkbox" id="showInconsistentCheckbox" /> Mostrar transacciones inconsistentes
+          </label>
             <table id="resultsTable">
               <thead></thead>
               <tbody></tbody>

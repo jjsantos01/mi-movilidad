@@ -16,6 +16,8 @@ let ecobiciHeatmapTiempo;
 let resultsDataTable;
 let viajesPorHoraChart;
 let ecobiciViajes;
+let inconsistentKeys = new Set();
+let inconsistentFilterFn = null;
 
 const colorPalette = {
   "STC": 'rgba(254, 80, 0, 0.8)', // FE5000
@@ -305,6 +307,72 @@ function displayResults(data) {
         // Clear existing data and add new data
         resultsDataTable.clear().rows.add(data).draw();
 
+        // Función para aplicar marcas de inconsistencia a las filas visibles
+        function applyInconsistencyMarks() {
+            $('#resultsTable tbody tr').each(function() {
+                const rowData = resultsDataTable.row(this).data();
+                if (!rowData) return;
+                const key = `${rowData.numero}__${rowData.fecha}`;
+                const found = inconsistentKeys.has(key) || rowData._inconsistente;
+                // Log de depuración por fila
+                try {
+                  console.debug('results row key:', key, 'foundInInconsistentKeys:', inconsistentKeys.has(key), 'row._inconsistente:', !!rowData._inconsistente);
+                } catch (e) {}
+                if (found) {
+                    $(this).addClass('inconsistent-row');
+                    // Tooltip explicativo (añadimos saldo esperado si está disponible)
+                    const esperado = rowData._esperado !== undefined ? ` Saldo esperado: ${rowData._esperado}.` : '';
+                    $(this).attr('title', 'No coincide el monto cobrado con el saldo final.' + esperado);
+                } else {
+                    $(this).removeClass('inconsistent-row');
+                    $(this).removeAttr('title');
+                }
+            });
+        }
+
+        // Aplicar inmediatamente a las filas actuales
+        setTimeout(applyInconsistencyMarks, 50);
+
+        // Reaplicar cada vez que DataTable vuelva a dibujar (paginación, búsqueda, orden)
+        try {
+            resultsDataTable.on('draw', function() { setTimeout(applyInconsistencyMarks, 10); });
+        } catch (e) {
+            // si ocurre un error, no bloquear la UI
+        }
+
+        // Configurar checkbox para filtrar solo transacciones inconsistentes
+        try {
+            const checkbox = document.getElementById('showInconsistentCheckbox');
+            if (checkbox) {
+                // Definir la función de filtro una vez
+                inconsistentFilterFn = function(settings, data, dataIndex) {
+                    // Si checkbox no está marcado, dejar pasar todo
+                    if (!document.getElementById('showInconsistentCheckbox').checked) return true;
+                    // Obtener datos de la fila
+                    const row = resultsDataTable.row(dataIndex).data();
+                    if (!row) return false;
+                    const key = `${row.numero}__${row.fecha}`;
+                    return inconsistentKeys.has(key) || !!row._inconsistente;
+                };
+
+                // Listener para activar/desactivar el filtro (solo una vez)
+                if (!checkbox.dataset.inconsListener) {
+                  checkbox.addEventListener('change', function() {
+                      // Remover nuestro filtro por si ya estaba
+                      $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(fn => fn !== inconsistentFilterFn);
+                      if (this.checked) {
+                          // Añadir filtro
+                          $.fn.dataTable.ext.search.push(inconsistentFilterFn);
+                      }
+                      resultsDataTable.draw();
+                  });
+                  checkbox.dataset.inconsListener = '1';
+                }
+            }
+        } catch (e) {
+            console.debug('No se pudo configurar el checkbox de inconsistencias', e);
+        }
+
         resultsTable.style.display = 'table';
     } else {
         // If there's no data, destroy the DataTable if it exists
@@ -342,6 +410,14 @@ function updateSectionContents(data) {
     createHeatmap(viajes, selectedOrganismo);
   });
   createSaldoFinalChart(data);
+  // Detectar transacciones con saldo inconsistente
+  const inconsistencias = detectInconsistencias(data);
+  if (inconsistencias && inconsistencias.length > 0) {
+    renderWarning(inconsistencias);
+  } else {
+    const wc = document.getElementById('warningContainer');
+    if (wc) wc.innerHTML = '';
+  }
   // Actualizar y mostrar/ocultar secciones según corresponda
   updateSection('metroSection', metro, updateMetroSection);
   updateSection('metrobusSection', metrobus, updateMetrobusSection);
@@ -514,6 +590,90 @@ function getMomentoDia(hora) {
   } else {
       return "Noche";
   }
+}
+
+// Convierte la fecha con formato DD-MM-YYYY HH:MM:SS a un objeto Date
+function parseFechaHora(fechaHora) {
+  if (!fechaHora) return new Date(0);
+  const parts = fechaHora.split(' ');
+  const datePart = parts[0];
+  const timePart = parts[1] || '00:00:00';
+  const isoDate = datePart.split('-').reverse().join('-') + 'T' + timePart;
+  return new Date(isoDate);
+}
+
+// Detecta transacciones donde el saldo_final no coincide con el monto aplicado
+// Excluye operaciones de Ecobici: '70-INICIO DE VIAJE' y '71-FIN DE VIAJE'
+function detectInconsistencias(data) {
+  if (!data || data.length === 0) return [];
+
+  // Limpiar clave global antes de recalcular
+  inconsistentKeys.clear();
+
+  // Ordenar cronológicamente por fecha
+  const sorted = [...data].sort((a, b) => parseFechaHora(a.fecha) - parseFechaHora(b.fecha));
+
+  // Excluir operaciones de ecobici que no afectan saldo
+  const excludedOps = new Set(['70-INICIO DE VIAJE', '71-FIN DE VIAJE']);
+  const filtered = sorted.filter(item => !excludedOps.has((item.operacion || '').toUpperCase()));
+
+  const inconsistencias = [];
+
+  for (let i = 1; i < filtered.length; i++) {
+    const prev = filtered[i - 1];
+    const curr = filtered[i];
+
+    const saldoPrev = parseFloat(prev.saldo_final) || 0;
+    const monto = parseFloat(curr.monto) || 0;
+    const esRecarga = (curr.operacion || '').toUpperCase().indexOf('RECARGA') !== -1;
+
+    const esperado = esRecarga ? saldoPrev + monto : saldoPrev - monto;
+    const actual = parseFloat(curr.saldo_final) || 0;
+
+    // Comparación con tolerancia pequeña para manejar decimales
+    if (Math.abs(esperado - actual) > 0.001) {
+      // Marcar en el objeto original (por si DataTable lo necesita)
+      const original = data.find(d => d.numero === curr.numero && d.fecha === curr.fecha) || curr;
+      original._inconsistente = true;
+      original._saldo_inicial = saldoPrev;
+      original._esperado = esperado;
+
+      const key = `${original.numero}__${original.fecha}`;
+      inconsistentKeys.add(key);
+
+      inconsistencias.push({
+        numero: curr.numero,
+        fecha: curr.fecha,
+        monto: curr.monto,
+        saldo_inicial: saldoPrev,
+        saldo_final: curr.saldo_final,
+        esperado: esperado
+      });
+    }
+  }
+
+  // Log de depuración: mostrar claves detectadas
+  try {
+    console.debug('detectInconsistencias: claves detectadas ->', Array.from(inconsistentKeys));
+    console.debug('detectInconsistencias: items detectados ->', inconsistencias);
+  } catch (e) {
+    // no bloquear en entornos sin consola
+  }
+
+  return inconsistencias;
+}
+
+function renderWarning(inconsistencias) {
+  const wc = document.getElementById('warningContainer');
+  if (!wc) return;
+  const n = inconsistencias.length;
+  let html = `<div class="warning-box"><h4>Se detectó ${n} transacci${n === 1 ? 'ón' : 'ones'} con valores cobrados inconsistentes:</h4>`;
+  html += '<ul class="warning-list' + '">';
+  inconsistencias.forEach(item => {
+    html += `<li>número: ${item.numero}, fecha: ${item.fecha}, monto cobrado: ${item.monto}, saldo inicial: ${item.saldo_inicial}, saldo final: ${item.saldo_final}</li>`;
+  });
+  html += '</ul></div>';
+  wc.innerHTML = html;
 }
 
 function processViajes(data) {
