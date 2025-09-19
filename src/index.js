@@ -13,6 +13,7 @@ import { crearGraficoViajesPorHoraYOrganismo } from './charts/by-hour.js';
 import { createHeatmap } from './charts/heatmap.js';
 import { createSaldoFinalChart } from './charts/saldo-final.js';
 import { attachEcobiciAnimation } from './charts/ecobici-animation.js';
+import { createCalendarHeatmap } from './charts/calendar.js';
 import { createTop10MetroLinesChart, createTop10MetroStationsChart } from './charts/metro-top10.js';
 import { createMetroMap } from './maps/metro.js';
 import { createEcobiciMap } from './maps/ecobici.js';
@@ -38,6 +39,7 @@ function renderAll() {
   getTotalViajes(viajes);
   getTotalRecargas(state.rawData);
   // Charts
+  createCalendarHeatmap(viajes);
   createPieChart(viajes);
   createLineChart(viajes);
   createStackedBarChart(viajes);
