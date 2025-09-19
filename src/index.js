@@ -12,6 +12,7 @@ import { createBarChartByMomentoDia } from './charts/by-momento.js';
 import { crearGraficoViajesPorHoraYOrganismo } from './charts/by-hour.js';
 import { createHeatmap } from './charts/heatmap.js';
 import { createSaldoFinalChart } from './charts/saldo-final.js';
+import { attachEcobiciAnimation } from './charts/ecobici-animation.js';
 import { createTop10MetroLinesChart, createTop10MetroStationsChart } from './charts/metro-top10.js';
 import { createMetroMap } from './maps/metro.js';
 import { createEcobiciMap } from './maps/ecobici.js';
@@ -109,6 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
   attachGlobalModalHandlers();
   bindDropZone(onDataLoaded);
   bindDownloads(() => state.rawData);
+  // Inicializa animación de Ecobici con datos desde el estado
+  attachEcobiciAnimation(() => state.ecobiciViajes);
   if (window.location.hostname === 'localhost') {
     (async () => {
       try {
