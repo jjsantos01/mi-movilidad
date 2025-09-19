@@ -15,14 +15,13 @@ export function crearGraficoViajesPorHoraYOrganismo(viajes) {
   const options = {
     series,
     colors: series.map(s => s.color),
-    chart: { type: 'line', height: 350, zoom: { enabled: false } },
+    chart: { type: 'bar', height: 350, stacked: true, zoom: { enabled: false } },
+    plotOptions: { bar: { horizontal: false } },
     title: { text: 'Distribución de viajes por hora y sistema', align: 'center' },
     xaxis: { categories: Array.from({ length: 24 }, (_, i) => i), title: { text: 'Hora del día' } },
     yaxis: { title: { text: 'Número de viajes' } },
-    stroke: { curve: 'smooth' },
-    markers: { size: 3 },
-    tooltip: { shared: true, intersect: false },
-  };
+    dataLabels: { enabled: true },
+    tooltip: { shared: true, intersect: false, y: { formatter: v => `${v} viajes` } },
+    };
   return mountChart('viajesPorHora', 'viajesPorHora', options, registerChart);
 }
-

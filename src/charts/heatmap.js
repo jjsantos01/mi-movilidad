@@ -22,14 +22,13 @@ export function createHeatmap(viajes, selectedOrganismo = 'Todos') {
   const options = {
     series,
     chart: { type: 'heatmap', height: 350 },
-    dataLabels: { enabled: false },
+    dataLabels: { enabled: true },
     colors: ['#008FFB'],
-    title: { text: 'Calor por momento del día y día de la semana' },
+    title: { text: 'Viajes por día de la semana y momento' },
     xaxis: { categories: momentosDia },
-    yaxis: { categories: diasSemana },
+    yaxis: { categories: diasSemana.reverse() },
     tooltip: { y: { formatter: v => `${v} viajes` } },
   };
 
   return mountChart('heatmap', 'heatmapChart', options, registerChart);
 }
-

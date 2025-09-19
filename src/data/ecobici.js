@@ -1,4 +1,5 @@
 import { parseDateTime } from '../utils/date.js';
+import { colorPalette } from '../config/constants.js';
 
 export function matchInicioFinViaje(inicioViaje, finViaje) {
   return (inicioViaje || [])
@@ -62,5 +63,14 @@ export function getEcobiciStats(inicioViaje, finViaje) {
   setText('estacionesVisitadas', estacionesVisitadas.size);
   setText('totalTiempoEcobici', `${tiempoTotal} min`);
   setText('tiempoPromedioEcobici', `${tiempoPromedio} min`);
-}
 
+  // Colorize Ecobici stat cards similar to previous behavior
+  const container = document.getElementById('ecobiciStatsContainer');
+  if (container) {
+    const base = colorPalette['ECOBICI'] || 'rgba(0, 154, 68, 0.8)';
+    const withAlpha = base.replace(/[\d\.]+\)$/g, '0.5)');
+    container.querySelectorAll('p').forEach(p => {
+      p.parentElement?.style?.setProperty('background-color', withAlpha);
+    });
+  }
+}

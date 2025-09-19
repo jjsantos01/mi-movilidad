@@ -31,9 +31,14 @@ export function showLoadingMessage() {
 }
 
 export function showAllSections() {
-  document.querySelectorAll('.section').forEach(section => {
-    section.style.display = section.id === 'statsContainer' ? 'flex' : 'block';
-  });
+  // Reveal only the stats container here; leave other sections
+  // visibility to be controlled by updateSection calls.
+  const stats = document.getElementById('statsContainer');
+  if (stats) stats.style.display = 'flex';
+  const charts = document.getElementById('chartContainer');
+  if (charts) charts.style.display = 'block';
+  const results = document.getElementById('results');
+  if (results) results.style.display = 'block';
   const el = document.getElementById('loadingMessage');
   if (el) el.innerHTML = '';
 }
@@ -48,4 +53,3 @@ export function updateSection(sectionId, data, updateFunction) {
     section.style.display = 'none';
   }
 }
-

@@ -1,7 +1,7 @@
 import { state, setRawData, setViajes, setEcobiciViajes, registerChart } from './state.js';
-import { setupCollapsibleSections, showAllSections, updateSection } from './ui/sections.js';
+import { setupCollapsibleSections, showAllSections, showLoadingMessage, updateSection } from './ui/sections.js';
 import { attachGlobalModalHandlers } from './ui/modal.js';
-import { bindDropZone } from './io/excel.js';
+import { bindDropZone, excelToJson } from './io/excel.js';
 import { processViajes, createMetroObject, populateOrganismoSelector } from './data/normalize.js';
 import { getTotalRecargas, getTotalViajes } from './data/metrics.js';
 import { detectInconsistencias, renderWarning } from './data/inconsistencias.js';
@@ -16,6 +16,7 @@ import { createTop10MetroLinesChart, createTop10MetroStationsChart } from './cha
 import { createMetroMap } from './maps/metro.js';
 import { createEcobiciMap } from './maps/ecobici.js';
 import { matchInicioFinViaje, getEcobiciStats } from './data/ecobici.js';
+import { getMetroStats } from './data/metro-stats.js';
 import { displayResults } from './ui/table.js';
 import { bindDownloads } from './ui/downloads.js';
 
@@ -63,22 +64,25 @@ function renderAll() {
   const ecobici = state.rawData.filter(d => d.organismo === 'ECOBICI');
   const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
   const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
-  setEcobiciViajes(matchInicioFinViaje(inicioViaje, finViaje));
+  const ecobiciTrips = matchInicioFinViaje(inicioViaje, finViaje);
+  setEcobiciViajes(ecobiciTrips);
 
   updateSection('metroSection', metro, () => {
     // Stats + charts + map for Metro
+    getMetroStats(metro, 'STC');
     createTop10MetroLinesChart(metro, 'STC');
     createTop10MetroStationsChart(metro, 'STC');
     createMetroMap(metro, 'STC');
   });
 
   updateSection('metrobusSection', metrobus, () => {
+    getMetroStats(metrobus, 'METROBÚS');
     createTop10MetroLinesChart(metrobus, 'METROBÚS');
     createTop10MetroStationsChart(metrobus, 'METROBÚS');
     createMetroMap(metrobus, 'METROBÚS');
   });
 
-  updateSection('ecobiciSection', ecobici, () => {
+  updateSection('ecobiciSection', ecobiciTrips, () => {
     getEcobiciStats(inicioViaje, finViaje);
     import('./charts/ecobici-heatmap.js').then(({ createEcobiciHeatmap }) => {
       createEcobiciHeatmap(inicioViaje, finViaje, 'viajes');
@@ -105,5 +109,28 @@ document.addEventListener('DOMContentLoaded', () => {
   attachGlobalModalHandlers();
   bindDropZone(onDataLoaded);
   bindDownloads(() => state.rawData);
+  if (window.location.hostname === 'localhost') {
+    (async () => {
+      try {
+        showLoadingMessage();
+        const resp = await fetch('datos/data.xlsx');
+        if (resp.ok) {
+          const blob = await resp.blob();
+          const rows = await excelToJson(blob);
+          onDataLoaded(rows);
+          return;
+        }
+        throw new Error('data.xlsx not available');
+      } catch (e) {
+        try {
+          const r = await fetch('datos/data.json');
+          if (r.ok) {
+            const json = await r.json();
+            const rows = Array.isArray(json) ? json : (json.data || []);
+            onDataLoaded(rows);
+          }
+        } catch {}
+      }
+    })();
+  }
 });
-
