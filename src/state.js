@@ -3,6 +3,7 @@ export const state = {
   rawData: [],
   viajes: [],
   ecobiciViajes: [],
+  timtValidations: [],
   charts: new Map(),
   mapInstances: {},
 };
@@ -21,6 +22,10 @@ export function setEcobiciViajes(v) {
   window.ecobiciViajes = state.ecobiciViajes;
 }
 
+export function setTimtValidations(rows) {
+  state.timtValidations = rows || [];
+}
+
 export function registerChart(key, chartInstance) {
   const existing = state.charts.get(key);
   if (existing && typeof existing.destroy === 'function') {
@@ -28,4 +33,3 @@ export function registerChart(key, chartInstance) {
   }
   state.charts.set(key, chartInstance);
 }
-

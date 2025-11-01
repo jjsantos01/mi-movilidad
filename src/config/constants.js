@@ -49,3 +49,4 @@ export const selectors = {
   showInconsistentCheckbox: '#showInconsistentCheckbox'
 };
 
+export const TIMT_WINDOW_MINUTES = 120;

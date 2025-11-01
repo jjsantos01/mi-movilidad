@@ -1,5 +1,10 @@
+import { TIMT_WINDOW_MINUTES } from '../config/constants.js';
+
 const UNKNOWN_STATION = 'desconocido';
-const DEFAULT_WINDOW_MINUTES = 120;
+
+function normalizeKey(label) {
+  return String(label || UNKNOWN_STATION).trim().toLowerCase();
+}
 
 function parseAmount(raw) {
   if (raw === undefined || raw === null) return 0;
@@ -63,7 +68,7 @@ function finalizeTrip(trip) {
   };
 }
 
-export function groupTimtTrips(events, windowMinutes = DEFAULT_WINDOW_MINUTES) {
+export function groupTimtTrips(events, windowMinutes = TIMT_WINDOW_MINUTES) {
   const msWindow = windowMinutes * 60 * 1000;
   const sorted = (events || [])
     .map(event => {
@@ -113,7 +118,7 @@ export function buildTimtMatrix(trips) {
   const matrix = new Map();
 
   const register = (mapRef, label) => {
-    const key = String(label || UNKNOWN_STATION).toLowerCase();
+    const key = normalizeKey(label);
     if (!mapRef.has(key)) mapRef.set(key, label || UNKNOWN_STATION);
     return key;
   };
@@ -136,11 +141,11 @@ export function buildTimtMatrix(trips) {
   let grandTotal = 0;
 
   origins.forEach(originLabel => {
-    const originKey = String(originLabel || UNKNOWN_STATION).toLowerCase();
+    const originKey = normalizeKey(originLabel);
     const row = matrix.get(originKey) || new Map();
     let rowTotal = 0;
     destinations.forEach(destLabel => {
-      const destKey = String(destLabel || UNKNOWN_STATION).toLowerCase();
+      const destKey = normalizeKey(destLabel);
       const value = row.get(destKey) || 0;
       rowTotal += value;
       totalsByDestination.set(destKey, (totalsByDestination.get(destKey) || 0) + value);
@@ -153,20 +158,41 @@ export function buildTimtMatrix(trips) {
     origins,
     destinations,
     getCount(originLabel, destLabel) {
-      const originKey = String(originLabel || UNKNOWN_STATION).toLowerCase();
-      const destKey = String(destLabel || UNKNOWN_STATION).toLowerCase();
+      const originKey = normalizeKey(originLabel);
+      const destKey = normalizeKey(destLabel);
       return (matrix.get(originKey)?.get(destKey)) || 0;
     },
     getOriginTotal(label) {
-      const key = String(label || UNKNOWN_STATION).toLowerCase();
+      const key = normalizeKey(label);
       return totalsByOrigin.get(key) || 0;
     },
     getDestinationTotal(label) {
-      const key = String(label || UNKNOWN_STATION).toLowerCase();
+      const key = normalizeKey(label);
       return totalsByDestination.get(key) || 0;
+    },
+    getStationTotals(label) {
+      const key = normalizeKey(label);
+      const origin = totalsByOrigin.get(key) || 0;
+      const destination = totalsByDestination.get(key) || 0;
+      return {
+        origin,
+        destination,
+        total: origin + destination,
+      };
     },
     grandTotal,
   };
+}
+
+export function filterTimtEntryValidations(events, windowMinutes = TIMT_WINDOW_MINUTES) {
+  const trips = groupTimtTrips(events, windowMinutes);
+  const allowed = new Set();
+  trips.forEach(trip => {
+    if (trip.eventos && trip.eventos[0]) {
+      allowed.add(trip.eventos[0]);
+    }
+  });
+  return (events || []).filter(event => allowed.has(event));
 }
 
 export { UNKNOWN_STATION as TIMT_UNKNOWN_STATION };

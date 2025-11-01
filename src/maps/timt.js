@@ -3,7 +3,7 @@ import { TIMT_UNKNOWN_STATION } from '../data/timt.js';
 
 const TIMT_COLOR = '#7d2f2b';
 
-export function createTIMTMap(timt) {
+export function createTIMTMap(timt, matrix) {
   const map = initializeMap('TIMT', 19.278608, -99.513984, 11);
 
   fetch('maps/TIMT.geojson')
@@ -32,27 +32,51 @@ export function createTIMTMap(timt) {
         { name: 'Observatorio', lat: 19.39883508933639, lng: -99.19948057577304 },
       ];
 
-      const viajesEstaciones = (timt || []).reduce((acc, viaje) => {
-        const sumar = nombre => {
-          const key = (nombre || '').trim().toLowerCase();
-          if (!key || key === TIMT_UNKNOWN_STATION) return;
-          acc[key] = (acc[key] || 0) + 1;
+      const hasMatrixTotals = matrix && typeof matrix.getStationTotals === 'function';
+      const fallbackTotals = {};
+
+      if (!hasMatrixTotals) {
+        (timt || []).forEach(viaje => {
+          const sumar = (nombre, field) => {
+            const key = (nombre || '').trim().toLowerCase();
+            if (!key || key === TIMT_UNKNOWN_STATION) return;
+            fallbackTotals[key] = fallbackTotals[key] || { origin: 0, destination: 0 };
+            fallbackTotals[key][field] += 1;
+          };
+          sumar(viaje.estacionOrigen || viaje.estacion, 'origin');
+          sumar(viaje.estacionDestino, 'destination');
+        });
+      }
+
+      const getStationTotals = name => {
+        if (!name) return { origin: 0, destination: 0, total: 0 };
+        if (hasMatrixTotals) {
+          return matrix.getStationTotals(name);
+        }
+        const key = name.trim().toLowerCase();
+        const fromFallback = fallbackTotals[key] || { origin: 0, destination: 0 };
+        return {
+          origin: fromFallback.origin,
+          destination: fromFallback.destination,
+          total: fromFallback.origin + fromFallback.destination,
         };
-        sumar(viaje.estacionOrigen || viaje.estacion);
-        sumar(viaje.estacionDestino);
-        return acc;
-      }, {});
+      };
 
       const MIN_RADIUS = 4;
       estacionesTIMT.forEach(({ name, lat, lng }) => {
-        const key = name.toLowerCase();
-        const numViajes = viajesEstaciones[key] || 0;
+        const { origin, destination, total } = getStationTotals(name);
+        const maxFlow = Math.max(origin, destination);
         const marker = L.circleMarker([lat, lng], {
-          radius: Math.min(MIN_RADIUS + numViajes, 20),
+          radius: Math.min(MIN_RADIUS + maxFlow, 20),
           color: 'blue',
           fillColor: 'blue',
           fillOpacity: 0.9
-        }).bindPopup(`<strong>${name}</strong><br>Viajes: ${numViajes}`);
+        }).bindPopup(
+          `<strong>${name}</strong><br>` +
+          `Total de viajes asociados: ${(total).toLocaleString()}<br>` +
+          `Como origen: ${origin.toLocaleString()}<br>` +
+          `Como destino: ${destination.toLocaleString()}`
+        );
         marker.addTo(map);
         hoverPopup(marker);
       });

@@ -1,8 +1,8 @@
-import { state, setRawData, setViajes, setEcobiciViajes, registerChart } from './state.js';
+import { state, setRawData, setViajes, setEcobiciViajes, registerChart, setTimtValidations } from './state.js';
 import { setupCollapsibleSections, showAllSections, showLoadingMessage, updateSection } from './ui/sections.js';
 import { attachGlobalModalHandlers } from './ui/modal.js';
 import { bindDropZone, excelToJson } from './io/excel.js';
-import { processViajes, createMetroObject, populateOrganismoSelector } from './data/normalize.js';
+import { processViajes, createMetroObject, populateOrganismoSelector, extractTimtValidations } from './data/normalize.js';
 import { getTotalRecargas, getTotalViajes } from './data/metrics.js';
 import { detectInconsistencias, renderWarning } from './data/inconsistencias.js';
 import { createPieChart } from './charts/pie.js';
@@ -67,7 +67,7 @@ function renderAll() {
   // Sections
   const metro = createMetroObject(viajes, 'STC');
   const metrobus = createMetroObject(viajes, 'METROBÚS');
-  const timtValidations = (viajes || []).filter(v => v.organismo === 'STE' && v.linea === 'TIMT' && v.operacion === '03-VALIDACION');
+  const timtValidations = state.timtValidations || [];
   const timtTrips = groupTimtTrips(timtValidations);
   const timtMatrix = buildTimtMatrix(timtTrips);
   const ecobici = state.rawData.filter(d => d.organismo === 'ECOBICI');
@@ -100,7 +100,7 @@ function renderAll() {
         nombre => nombre && nombre.toLowerCase() !== TIMT_UNKNOWN_STATION
       ),
     });
-    createTIMTMap(timtTrips);
+    createTIMTMap(timtTrips, timtMatrix);
     renderTimtMatrix(timtMatrix);
   });
 
@@ -121,7 +121,9 @@ function renderAll() {
 function onDataLoaded(rows) {
   setRawData(rows);
   const viajes = processViajes(rows);
+  const timtValidations = extractTimtValidations(rows);
   setViajes(viajes);
+  setTimtValidations(timtValidations);
   renderAll();
 }
 
