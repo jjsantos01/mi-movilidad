@@ -76,6 +76,13 @@ table {
   background: #fff;
   margin-bottom: 20px;
 }
+.timt-od-container {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+.timt-od-table {
+  min-width: 480px;
+}
 th, td {
   padding: 10px;
   border: 1px solid #ddd;

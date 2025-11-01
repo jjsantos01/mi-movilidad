@@ -1,5 +1,5 @@
 import { initializeMap, hoverPopup } from './base.js';
-import { state } from '../state.js';
+import { TIMT_UNKNOWN_STATION } from '../data/timt.js';
 
 const TIMT_COLOR = '#7d2f2b';
 
@@ -33,9 +33,13 @@ export function createTIMTMap(timt) {
       ];
 
       const viajesEstaciones = (timt || []).reduce((acc, viaje) => {
-        const key = (viaje.estacion || '').toLowerCase();
-        if (!key) return acc;
-        acc[key] = (acc[key] || 0) + 1;
+        const sumar = nombre => {
+          const key = (nombre || '').trim().toLowerCase();
+          if (!key || key === TIMT_UNKNOWN_STATION) return;
+          acc[key] = (acc[key] || 0) + 1;
+        };
+        sumar(viaje.estacionOrigen || viaje.estacion);
+        sumar(viaje.estacionDestino);
         return acc;
       }, {});
 

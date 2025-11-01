@@ -1,15 +1,31 @@
 import { colorPalette } from '../config/constants.js';
 
 export function getMetroStats(data, organismo = 'STC', options = {}) {
-  const totalViajes = (data || []).length;
-  const estacionesUnicas = new Set((data || []).map(viaje => viaje.estacion).filter(Boolean));
-  const fechasUnicas = new Set((data || []).map(viaje => (viaje.fecha || '').split(' ')[0]).filter(Boolean));
-  const gastoTotal = (data || []).reduce((total, viaje) => {
-    if (viaje.operacion === '03-VALIDACION') {
-      const m = parseFloat(viaje.monto);
-      return total + (isNaN(m) ? 0 : m);
-    }
-    return total;
+  const dataset = Array.isArray(data) ? data : [];
+  const stationExtractor = typeof options.getStations === 'function'
+    ? options.getStations
+    : viaje => [viaje.estacion];
+
+  const totalViajes = dataset.length;
+
+  const estacionesUnicas = new Set();
+  dataset.forEach(viaje => {
+    const estaciones = stationExtractor(viaje) || [];
+    estaciones
+      .map(nombre => (nombre || '').trim())
+      .filter(Boolean)
+      .forEach(nombre => estacionesUnicas.add(nombre));
+  });
+
+  const fechasUnicas = new Set(dataset.map(viaje => (viaje.fecha || '').split(' ')[0]).filter(Boolean));
+  const gastoTotal = dataset.reduce((total, viaje) => {
+    const rawMonto = viaje?.monto ?? 0;
+    const montoNumero = typeof rawMonto === 'number'
+      ? rawMonto
+      : parseFloat(String(rawMonto).replace(',', '.'));
+    if (!Number.isFinite(montoNumero)) return total;
+    if (viaje.operacion && viaje.operacion !== '03-VALIDACION') return total;
+    return total + montoNumero;
   }, 0);
 
   // Element/section prefix mapping

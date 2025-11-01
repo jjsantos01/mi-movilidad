@@ -22,6 +22,8 @@ import { matchInicioFinViaje, getEcobiciStats } from './data/ecobici.js';
 import { getMetroStats } from './data/metro-stats.js';
 import { displayResults } from './ui/table.js';
 import { bindDownloads } from './ui/downloads.js';
+import { groupTimtTrips, buildTimtMatrix, TIMT_UNKNOWN_STATION } from './data/timt.js';
+import { renderTimtMatrix } from './ui/timt-table.js';
 
 function populateOrganismoSelectorDOM(viajes) {
   const selector = document.getElementById('organismoSelector');
@@ -65,7 +67,9 @@ function renderAll() {
   // Sections
   const metro = createMetroObject(viajes, 'STC');
   const metrobus = createMetroObject(viajes, 'METROBÚS');
-  const timt = (viajes || []).filter(v => v.organismo === 'STE' && v.linea === 'TIMT' && v.operacion === '03-VALIDACION');
+  const timtValidations = (viajes || []).filter(v => v.organismo === 'STE' && v.linea === 'TIMT' && v.operacion === '03-VALIDACION');
+  const timtTrips = groupTimtTrips(timtValidations);
+  const timtMatrix = buildTimtMatrix(timtTrips);
   const ecobici = state.rawData.filter(d => d.organismo === 'ECOBICI');
   const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
   const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
@@ -87,10 +91,17 @@ function renderAll() {
     createMetroMap(metrobus, 'METROBÚS');
   });
 
-  updateSection('timtSection', timt, () => {
+  updateSection('timtSection', timtTrips, () => {
     // Solo tarjetas/resumen para TIMT
-    getMetroStats(timt, 'STE', { elementId: 'TIMT', color: 'rgba(125, 47, 43, 0.8)' });
-    createTIMTMap(timt);
+    getMetroStats(timtTrips, 'STE', {
+      elementId: 'TIMT',
+      color: 'rgba(125, 47, 43, 0.8)',
+      getStations: viaje => [viaje.estacionOrigen, viaje.estacionDestino].filter(
+        nombre => nombre && nombre.toLowerCase() !== TIMT_UNKNOWN_STATION
+      ),
+    });
+    createTIMTMap(timtTrips);
+    renderTimtMatrix(timtMatrix);
   });
 
   updateSection('ecobiciSection', ecobiciTrips, () => {
