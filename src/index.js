@@ -17,6 +17,7 @@ import { createCalendarHeatmap } from './charts/calendar.js';
 import { createTop10MetroLinesChart, createTop10MetroStationsChart } from './charts/metro-top10.js';
 import { createMetroMap } from './maps/metro.js';
 import { createEcobiciMap } from './maps/ecobici.js';
+import { createTIMTMap } from './maps/timt.js';
 import { matchInicioFinViaje, getEcobiciStats } from './data/ecobici.js';
 import { getMetroStats } from './data/metro-stats.js';
 import { displayResults } from './ui/table.js';
@@ -64,6 +65,7 @@ function renderAll() {
   // Sections
   const metro = createMetroObject(viajes, 'STC');
   const metrobus = createMetroObject(viajes, 'METROBÚS');
+  const timt = (viajes || []).filter(v => v.organismo === 'STE' && v.linea === 'TIMT' && v.operacion === '03-VALIDACION');
   const ecobici = state.rawData.filter(d => d.organismo === 'ECOBICI');
   const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
   const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
@@ -83,6 +85,12 @@ function renderAll() {
     createTop10MetroLinesChart(metrobus, 'METROBÚS');
     createTop10MetroStationsChart(metrobus, 'METROBÚS');
     createMetroMap(metrobus, 'METROBÚS');
+  });
+
+  updateSection('timtSection', timt, () => {
+    // Solo tarjetas/resumen para TIMT
+    getMetroStats(timt, 'STE', { elementId: 'TIMT', color: 'rgba(125, 47, 43, 0.8)' });
+    createTIMTMap(timt);
   });
 
   updateSection('ecobiciSection', ecobiciTrips, () => {

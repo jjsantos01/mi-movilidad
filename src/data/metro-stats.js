@@ -1,6 +1,6 @@
 import { colorPalette } from '../config/constants.js';
 
-export function getMetroStats(data, organismo = 'STC') {
+export function getMetroStats(data, organismo = 'STC', options = {}) {
   const totalViajes = (data || []).length;
   const estacionesUnicas = new Set((data || []).map(viaje => viaje.estacion).filter(Boolean));
   const fechasUnicas = new Set((data || []).map(viaje => (viaje.fecha || '').split(' ')[0]).filter(Boolean));
@@ -12,8 +12,12 @@ export function getMetroStats(data, organismo = 'STC') {
     return total;
   }, 0);
 
-  let elementId = 'Metro';
-  if (organismo === 'METROBÚS') elementId = 'Metrobus';
+  // Element/section prefix mapping
+  let elementId = options.elementId || 'Metro';
+  if (!options.elementId) {
+    if (organismo === 'METROBÚS') elementId = 'Metrobus';
+    else elementId = 'Metro';
+  }
 
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   setText(`totalViajes${elementId}`, totalViajes.toLocaleString());
@@ -24,11 +28,10 @@ export function getMetroStats(data, organismo = 'STC') {
   // Card colorization
   const container = document.getElementById(`${elementId}StatsContainer`);
   if (container) {
-    const color = colorPalette[organismo] || 'rgba(0,0,0,0.2)';
-    const withAlpha = color.replace(/[\d\.]+\)$/g, '0.5)');
+    const baseColor = options.color || colorPalette[organismo] || 'rgba(0,0,0,0.2)';
+    const withAlpha = baseColor.replace(/[\d\.]+\)$/g, '0.5)');
     container.querySelectorAll('p').forEach(p => {
       p.parentElement?.style?.setProperty('background-color', withAlpha);
     });
   }
 }
-
