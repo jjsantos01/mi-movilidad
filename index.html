@@ -111,6 +111,18 @@
           </div>
           <div class="chart-row">
             <div class="chart-item full-width">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <label for="gastoPeriodoSelector">Ver gasto por:</label>
+                <select id="gastoPeriodoSelector">
+                  <option value="mes" selected>Mes</option>
+                  <option value="semana">Semana (lun–dom)</option>
+                </select>
+              </div>
+              <div id="gastoTotalChart"></div>
+            </div>
+          </div>
+          <div class="chart-row">
+            <div class="chart-item full-width">
               <div id="saldoFinalChart"></div>
             </div>
           </div>

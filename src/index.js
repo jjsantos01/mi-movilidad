@@ -12,6 +12,7 @@ import { createBarChartByMomentoDia } from './charts/by-momento.js';
 import { crearGraficoViajesPorHoraYOrganismo } from './charts/by-hour.js';
 import { createHeatmap } from './charts/heatmap.js';
 import { createSaldoFinalChart } from './charts/saldo-final.js';
+import { createGastoTotalChart } from './charts/gasto-total.js';
 import { attachEcobiciAnimation } from './charts/ecobici-animation.js';
 import { createCalendarHeatmap } from './charts/calendar.js';
 import { createTop10MetroLinesChart, createTop10MetroStationsChart } from './charts/metro-top10.js';
@@ -57,6 +58,16 @@ function renderAll() {
       createHeatmap(viajes, selectedOrganismo);
     });
     selector._bound = true;
+  }
+  // Gasto total por periodo (mes/semana)
+  const periodoSel = document.getElementById('gastoPeriodoSelector');
+  const currentPeriodo = periodoSel && periodoSel.value ? periodoSel.value : 'mes';
+  createGastoTotalChart(state.rawData, currentPeriodo);
+  if (periodoSel && !periodoSel._bound) {
+    periodoSel.addEventListener('change', function () {
+      createGastoTotalChart(state.rawData, this.value || 'mes');
+    });
+    periodoSel._bound = true;
   }
   createSaldoFinalChart(state.rawData);
 
