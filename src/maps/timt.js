@@ -6,6 +6,11 @@ const TIMT_COLOR = '#7d2f2b';
 export function createTIMTMap(timt, matrix) {
   const map = initializeMap('TIMT', 19.278608, -99.513984, 11);
 
+  // Atribución de fuente del trazo
+  map.attributionControl.addAttribution(
+    'Trazo: <a href="https://masivoedomex.blogspot.com/p/tren-interurbano.html" target="_blank">Masivo Edomex</a>'
+  );
+
   fetch('maps/TIMT.geojson')
     .then(r => r.json())
     .then(data => {
@@ -22,14 +27,15 @@ export function createTIMTMap(timt, matrix) {
       }).addTo(map);
 
       // Estaciones: usar mapeo manual y tamaño proporcional a viajes usados
+      // Coordenadas tomadas del KML oficial (Masivo Edomex)
       const estacionesTIMT = [
-        { name: 'Zinacantepec', lat: 19.28004529999825, lng: -99.69412896442051 },
-        { name: 'Toluca Centro', lat: 19.270347655433053, lng: -99.64138567976912 },
-        { name: 'Metepec', lat: 19.277527684501802, lng: -99.5751154733823 },
-        { name: 'Lerma', lat: 19.278635754416907, lng: -99.51455309325662 },
-        { name: 'Santa Fe', lat: 19.36400409808579, lng: -99.26865733713247 },
-        { name: 'Vasco de Quiroga', lat: 19.38502, lng: -99.23519 },
-        { name: 'Observatorio', lat: 19.39883508933639, lng: -99.19948057577304 },
+        { name: 'Zinacantepec',    lat: 19.2802287, lng: -99.6946995 },
+        { name: 'Toluca Centro',   lat: 19.2703383, lng: -99.641383  },
+        { name: 'Metepec',         lat: 19.2775398, lng: -99.5745151 },
+        { name: 'Lerma',           lat: 19.278648,  lng: -99.5149599 },
+        { name: 'Santa Fe',         lat: 19.3639686, lng: -99.2687198 },
+        { name: 'Vasco de Quiroga',lat: 19.3849423, lng: -99.2364669 },
+        { name: 'Observatorio',    lat: 19.3984849, lng: -99.2008108 },
       ];
 
       const hasMatrixTotals = matrix && typeof matrix.getStationTotals === 'function';
