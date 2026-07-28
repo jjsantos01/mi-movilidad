@@ -8,7 +8,7 @@ export function detectInconsistencias(data) {
 
   const sorted = [...data].sort((a, b) => parseFechaHora(a.fecha) - parseFechaHora(b.fecha));
   const excludedOps = new Set(['70-INICIO DE VIAJE', '71-FIN DE VIAJE']);
-  const filtered = sorted.filter(item => !excludedOps.has((item.operacion || '').toUpperCase()));
+  const filtered = sorted.filter(item => !excludedOps.has(String(item.operacion || '').toUpperCase()));
 
   const inconsistencias = [];
   for (let i = 1; i < filtered.length; i++) {
@@ -17,7 +17,7 @@ export function detectInconsistencias(data) {
 
     const saldoPrev = parseFloat(prev.saldo_final) || 0;
     const monto = parseFloat(curr.monto) || 0;
-    const esRecarga = (curr.operacion || '').toUpperCase().indexOf('RECARGA') !== -1;
+    const esRecarga = String(curr.operacion || '').toUpperCase().indexOf('RECARGA') !== -1;
     const esperado = esRecarga ? saldoPrev + monto : saldoPrev - monto;
     const actual = parseFloat(curr.saldo_final) || 0;
 
