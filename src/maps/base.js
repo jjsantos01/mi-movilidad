@@ -6,8 +6,9 @@ export function initializeMap(suffix, lat, lng, zoom) {
     try { state.mapInstances[mapId].remove(); } catch {}
   }
   const map = L.map(mapId).setView([lat, lng], zoom);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 16,
+    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
   }).addTo(map);
   state.mapInstances[mapId] = map;
   return map;
