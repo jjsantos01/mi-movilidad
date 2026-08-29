@@ -25,6 +25,8 @@ import { displayResults } from './ui/table.js';
 import { bindDownloads } from './ui/downloads.js';
 import { groupTimtTrips, buildTimtMatrix, TIMT_UNKNOWN_STATION } from './data/timt.js';
 import { renderTimtMatrix } from './ui/timt-table.js';
+import { getSTEStats } from './data/ste.js';
+import { createSTESubsystemsChart, createSTELinesChart } from './charts/ste.js';
 
 function populateOrganismoSelectorDOM(viajes) {
   const selector = document.getElementById('organismoSelector');
@@ -78,6 +80,7 @@ function renderAll() {
   // Sections
   const metro = createMetroObject(viajes, 'STC');
   const metrobus = createMetroObject(viajes, 'METROBÚS');
+  const ste = createMetroObject(viajes, 'STE');
   const timtValidations = state.timtValidations || [];
   const timtTrips = groupTimtTrips(timtValidations);
   const timtMatrix = buildTimtMatrix(timtTrips);
@@ -100,6 +103,12 @@ function renderAll() {
     createTop10MetroLinesChart(metrobus, 'METROBÚS');
     createTop10MetroStationsChart(metrobus, 'METROBÚS');
     createMetroMap(metrobus, 'METROBÚS');
+  });
+
+  updateSection('steSection', ste, () => {
+    getSTEStats(ste);
+    createSTESubsystemsChart(ste);
+    createSTELinesChart(ste);
   });
 
   updateSection('timtSection', timtTrips, () => {

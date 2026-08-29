@@ -181,6 +181,35 @@
             <div id="mapMetrobús" class="map-container"></div>
           </div>
         </div>
+        <div id="steSection" class="collapsible-section section">
+          <h2>Viajes en Transportes Eléctricos (STE)</h2>
+          <div class="section-content">
+            <div id="STEStatsContainer" class="stats-container">
+              <div class="stat-box">
+                <h3>Total de viajes STE <i class="fas fa-bolt"></i></h3>
+                <p id="totalViajesSTE"></p>
+              </div>
+              <div class="stat-box">
+                <h3>Viajes en Trolebús <i class="fas fa-bus-alt"></i></h3>
+                <p id="viajesTrolebusSTE"></p>
+              </div>
+              <div class="stat-box">
+                <h3>Viajes en Tren Ligero <i class="fas fa-tram"></i></h3>
+                <p id="viajesTrenLigeroSTE"></p>
+              </div>
+              <div class="stat-box">
+                <h3>Total gastado <i class="fas fa-dollar-sign"></i></h3>
+                <p id="montoGastadoSTE"></p>
+              </div>
+              <div class="stat-box">
+                <h3>Días que lo has usado <i class="fas fa-calendar-alt"></i></h3>
+                <p id="diasUsoSTE"></p>
+              </div>
+            </div>
+            <div id="steSubsystemsChart" class="chart-container"></div>
+            <div id="steLinesChart" class="chart-container"></div>
+          </div>
+        </div>
         <div id="timtSection" class="collapsible-section section">
           <h2>Viajes en Tren Interurbano México–Toluca</h2>
           <div class="section-content">
@@ -277,7 +306,7 @@
 
           </p>
         </footer>
-      <script type="module" src="src/index.js?v=20260829-2"></script>
+      <script type="module" src="src/index.js?v=20260829-3"></script>
       <div id="aboutModal" class="modal">
         <div class="modal-content">
           <span class="close" onclick="closeAboutModal()">&times;</span>
