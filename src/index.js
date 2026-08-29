@@ -80,6 +80,7 @@ function renderAll() {
   const metrobus = createMetroObject(viajes, 'METROBÚS');
   const timtValidations = state.timtValidations || [];
   const timtTrips = groupTimtTrips(timtValidations);
+  const timtMatrix = buildTimtMatrix(timtTrips);
   const ecobici = state.rawData.filter(d => String(d.organismo || '').trim().toUpperCase() === 'ECOBICI');
   const inicioViaje = ecobici.filter(d => String(d.operacion || '').trim().toUpperCase() === '70-INICIO DE VIAJE');
   const finViaje = ecobici.filter(d => String(d.operacion || '').trim().toUpperCase() === '71-FIN DE VIAJE');
