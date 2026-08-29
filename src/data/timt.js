@@ -171,7 +171,15 @@ export function buildTimtMatrix(trips) {
     const destKey = register(destinationMap, destLabel);
     if (!matrix.has(originKey)) matrix.set(originKey, new Map());
     const row = matrix.get(originKey);
-    row.set(destKey, (row.get(destKey) || 0) + 1);
+    if (!row.has(destKey)) {
+      row.set(destKey, { count: 0, durations: [] });
+    }
+    const cell = row.get(destKey);
+    cell.count += 1;
+    const duration = Number(trip?.duracionMinutos);
+    if (Number.isFinite(duration) && duration > 0) {
+      cell.durations.push(duration);
+    }
   });
 
   const origins = Array.from(originMap.values());
@@ -180,20 +188,40 @@ export function buildTimtMatrix(trips) {
   const totalsByOrigin = new Map();
   const totalsByDestination = new Map();
   let grandTotal = 0;
+  const allKnownDurations = [];
 
   origins.forEach(originLabel => {
     const originKey = normalizeKey(originLabel);
     const row = matrix.get(originKey) || new Map();
-    let rowTotal = 0;
+    let rowCount = 0;
+    const rowDurations = [];
+
     destinations.forEach(destLabel => {
       const destKey = normalizeKey(destLabel);
-      const value = row.get(destKey) || 0;
-      rowTotal += value;
-      totalsByDestination.set(destKey, (totalsByDestination.get(destKey) || 0) + value);
+      const cell = row.get(destKey) || { count: 0, durations: [] };
+      rowCount += cell.count;
+      rowDurations.push(...cell.durations);
+
+      if (!totalsByDestination.has(destKey)) {
+        totalsByDestination.set(destKey, { count: 0, durations: [] });
+      }
+      const destTotal = totalsByDestination.get(destKey);
+      destTotal.count += cell.count;
+      destTotal.durations.push(...cell.durations);
     });
-    totalsByOrigin.set(originKey, rowTotal);
-    grandTotal += rowTotal;
+
+    totalsByOrigin.set(originKey, { count: rowCount, durations: rowDurations });
+    grandTotal += rowCount;
+    allKnownDurations.push(...rowDurations);
   });
+
+  const calcAvg = durations => {
+    if (!durations || durations.length === 0) return 0;
+    const sum = durations.reduce((acc, v) => acc + v, 0);
+    return Math.round((sum / durations.length) * 10) / 10;
+  };
+
+  const grandAvgDuration = calcAvg(allKnownDurations);
 
   return {
     origins,
@@ -201,27 +229,42 @@ export function buildTimtMatrix(trips) {
     getCount(originLabel, destLabel) {
       const originKey = normalizeKey(originLabel);
       const destKey = normalizeKey(destLabel);
-      return (matrix.get(originKey)?.get(destKey)) || 0;
+      return matrix.get(originKey)?.get(destKey)?.count || 0;
+    },
+    getAvgDuration(originLabel, destLabel) {
+      const originKey = normalizeKey(originLabel);
+      const destKey = normalizeKey(destLabel);
+      const durations = matrix.get(originKey)?.get(destKey)?.durations;
+      return calcAvg(durations);
     },
     getOriginTotal(label) {
       const key = normalizeKey(label);
-      return totalsByOrigin.get(key) || 0;
+      return totalsByOrigin.get(key)?.count || 0;
+    },
+    getOriginAvgDuration(label) {
+      const key = normalizeKey(label);
+      return calcAvg(totalsByOrigin.get(key)?.durations);
     },
     getDestinationTotal(label) {
       const key = normalizeKey(label);
-      return totalsByDestination.get(key) || 0;
+      return totalsByDestination.get(key)?.count || 0;
+    },
+    getDestinationAvgDuration(label) {
+      const key = normalizeKey(label);
+      return calcAvg(totalsByDestination.get(key)?.durations);
     },
     getStationTotals(label) {
       const key = normalizeKey(label);
-      const origin = totalsByOrigin.get(key) || 0;
-      const destination = totalsByDestination.get(key) || 0;
+      const originCount = totalsByOrigin.get(key)?.count || 0;
+      const destCount = totalsByDestination.get(key)?.count || 0;
       return {
-        origin,
-        destination,
-        total: origin + destination,
+        origin: originCount,
+        destination: destCount,
+        total: originCount + destCount,
       };
     },
     grandTotal,
+    grandAvgDuration,
   };
 }
 

@@ -24,7 +24,7 @@ import { getMetroStats } from './data/metro-stats.js';
 import { displayResults } from './ui/table.js';
 import { bindDownloads } from './ui/downloads.js';
 import { groupTimtTrips, buildTimtMatrix, TIMT_UNKNOWN_STATION } from './data/timt.js';
-import { renderTimtMatrix } from './ui/timt-table.js';
+import { renderTimtMatrix, setupTimtTableEvents } from './ui/timt-table.js';
 import { getSTEStats } from './data/ste.js';
 import { createSTESubsystemsChart, createSTELinesChart } from './charts/ste.js';
 
@@ -112,7 +112,7 @@ function renderAll() {
   });
 
   updateSection('timtSection', timtTrips, () => {
-    // Solo tarjetas/resumen para TIMT
+    // Tarjetas de resumen para TIMT
     getMetroStats(timtTrips, 'STE', {
       elementId: 'TIMT',
       color: 'rgba(125, 47, 43, 0.8)',
@@ -120,8 +120,23 @@ function renderAll() {
         nombre => nombre && nombre.toLowerCase() !== TIMT_UNKNOWN_STATION
       ),
     });
+
+    // Calcular duración promedio de viajes con duración conocida
+    const knownDurationTrips = timtTrips.filter(t => (t.duracionMinutos || 0) > 0);
+    const avgDurationEl = document.getElementById('duracionPromedioTIMT');
+    if (avgDurationEl) {
+      if (knownDurationTrips.length > 0) {
+        const totalMin = knownDurationTrips.reduce((sum, t) => sum + t.duracionMinutos, 0);
+        const avgMin = Math.round(totalMin / knownDurationTrips.length);
+        avgDurationEl.textContent = `${avgMin} min`;
+      } else {
+        avgDurationEl.textContent = 'N/A';
+      }
+    }
+
     createTIMTMap(timtTrips, timtMatrix);
     renderTimtMatrix(timtMatrix);
+    setupTimtTableEvents(timtMatrix);
   });
 
   updateSection('ecobiciSection', ecobiciTrips, () => {

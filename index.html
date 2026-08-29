@@ -223,15 +223,28 @@
                 <p id="estacionesVisitadasTIMT"></p>
               </div>
               <div class="stat-box">
-                <h3>Total gastado <i class="fas fa-train"></i></h3>
+                <h3>Duración promedio <i class="fas fa-stopwatch"></i></h3>
+                <p id="duracionPromedioTIMT"></p>
+              </div>
+              <div class="stat-box">
+                <h3>Total gastado <i class="fas fa-dollar-sign"></i></h3>
                 <p id="montoGastadoTIMT"></p>
               </div>
               <div class="stat-box">
-                  <h3>Días que lo has usado <i class="fas fa-train"></i></h3>
+                  <h3>Días que lo has usado <i class="fas fa-calendar-alt"></i></h3>
                   <p id="diasUsoTIMT"></p>
               </div>
             </div>
-            <h3>Matriz origen-destino</h3>
+            <div class="timt-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 20px; margin-bottom: 10px; gap: 10px;">
+              <h3 id="timtODTitle" style="margin: 0;">Matriz origen-destino (Número de viajes)</h3>
+              <div class="timt-metric-controls" style="display: flex; align-items: center; gap: 8px;">
+                <label for="timtMetricSelect" style="font-weight: bold; font-size: 14px; color: #444;">Visualizar:</label>
+                <select id="timtMetricSelect" style="padding: 6px 12px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: #fff; cursor: pointer;">
+                  <option value="viajes">Número de viajes</option>
+                  <option value="duracion">Duración promedio del viaje</option>
+                </select>
+              </div>
+            </div>
             <div id="timtODContainer" class="timt-od-container"></div>
             <h3>Mapa de la línea y estaciones</h3>
             <div id="mapTIMT" class="map-container"></div>
@@ -306,7 +319,7 @@
 
           </p>
         </footer>
-      <script type="module" src="src/index.js?v=20260829-5"></script>
+      <script type="module" src="src/index.js?v=20260829-6"></script>
       <div id="aboutModal" class="modal">
         <div class="modal-content">
           <span class="close" onclick="closeAboutModal()">&times;</span>
