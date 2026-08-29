@@ -6,15 +6,24 @@ export function getMomentoDia(hora) {
 
 export function parseFechaHora(fechaHora) {
   if (!fechaHora) return new Date(0);
-  const [datePart, timePart = '00:00:00'] = fechaHora.split(' ');
-  const isoDate = datePart.split('-').reverse().join('-') + 'T' + timePart;
-  return new Date(isoDate);
+  const [datePart = '', timePart = '00:00:00'] = String(fechaHora).trim().split(/\s+/);
+  const dateTokens = datePart.split('-');
+  if (dateTokens.length !== 3) return new Date(0);
+
+  const isYearFirst = dateTokens[0].length === 4;
+  const [year, month, day] = isYearFirst
+    ? [parseInt(dateTokens[0], 10), parseInt(dateTokens[1], 10), parseInt(dateTokens[2], 10)]
+    : [parseInt(dateTokens[2], 10), parseInt(dateTokens[1], 10), parseInt(dateTokens[0], 10)];
+
+  const timeTokens = timePart.split(':');
+  const hour = parseInt(timeTokens[0], 10) || 0;
+  const minute = parseInt(timeTokens[1], 10) || 0;
+  const second = parseInt(timeTokens[2], 10) || 0;
+
+  return new Date(year, month - 1, day, hour, minute, second);
 }
 
 export function parseDateTime(dateTimeString) {
-  const [datePart, timePart] = dateTimeString.split(' ');
-  const [day, month, year] = datePart.split('-');
-  const [hour, minute, second] = timePart.split(':');
-  return new Date(year, month - 1, day, hour, minute, second);
+  return parseFechaHora(dateTimeString);
 }
 

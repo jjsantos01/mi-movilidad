@@ -1,7 +1,7 @@
 import { state, setRawData, setViajes, setEcobiciViajes, registerChart, setTimtValidations } from './state.js';
 import { setupCollapsibleSections, showAllSections, showLoadingMessage, updateSection } from './ui/sections.js';
 import { attachGlobalModalHandlers } from './ui/modal.js';
-import { bindDropZone, excelToJson } from './io/excel.js';
+import { bindDropZone, excelToJson, normalizeOrganismo, normalizeValue } from './io/excel.js';
 import { processViajes, createMetroObject, populateOrganismoSelector, extractTimtValidations } from './data/normalize.js';
 import { getTotalRecargas, getTotalViajes } from './data/metrics.js';
 import { detectInconsistencias, renderWarning } from './data/inconsistencias.js';
@@ -80,10 +80,9 @@ function renderAll() {
   const metrobus = createMetroObject(viajes, 'METROBÚS');
   const timtValidations = state.timtValidations || [];
   const timtTrips = groupTimtTrips(timtValidations);
-  const timtMatrix = buildTimtMatrix(timtTrips);
-  const ecobici = state.rawData.filter(d => d.organismo === 'ECOBICI');
-  const inicioViaje = ecobici.filter(d => d.operacion === '70-INICIO DE VIAJE');
-  const finViaje = ecobici.filter(d => d.operacion === '71-FIN DE VIAJE');
+  const ecobici = state.rawData.filter(d => String(d.organismo || '').trim().toUpperCase() === 'ECOBICI');
+  const inicioViaje = ecobici.filter(d => String(d.operacion || '').trim().toUpperCase() === '70-INICIO DE VIAJE');
+  const finViaje = ecobici.filter(d => String(d.operacion || '').trim().toUpperCase() === '71-FIN DE VIAJE');
   const ecobiciTrips = matchInicioFinViaje(inicioViaje, finViaje);
   setEcobiciViajes(ecobiciTrips);
 
@@ -130,9 +129,14 @@ function renderAll() {
 }
 
 function onDataLoaded(rows) {
-  setRawData(rows);
-  const viajes = processViajes(rows);
-  const timtValidations = extractTimtValidations(rows);
+  const sanitized = (rows || []).map(r => ({
+    ...r,
+    organismo: r.organismo ? normalizeOrganismo(r.organismo) : '',
+    operacion: r.operacion ? normalizeValue(r.operacion) : undefined,
+  }));
+  setRawData(sanitized);
+  const viajes = processViajes(sanitized);
+  const timtValidations = extractTimtValidations(sanitized);
   setViajes(viajes);
   setTimtValidations(timtValidations);
   renderAll();

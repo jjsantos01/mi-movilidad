@@ -1,11 +1,13 @@
-export const prod = window.location.hostname === 'localhost' ? 0 : 1;
+export const prod = typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost' ? 0 : 1;
 
 export const colorPalette = {
   STC: 'rgba(254, 80, 0, 0.8)',
   ECOBICI: 'rgba(0, 154, 68, 0.8)',
   'METROBÚS': 'rgba(200, 16, 46, 0.8)',
+  'METROBUS': 'rgba(200, 16, 46, 0.8)',
   RUTA: 'rgba(155, 38, 182, 0.8)',
   CABLEBUS: 'rgba(78, 195, 224, 0.8)',
+  'CABLEBÚS': 'rgba(78, 195, 224, 0.8)',
   CETRAM: 'rgba(240, 78, 152, 0.8)',
   STE: 'rgba(0, 87, 184, 0.8)',
   RTP: 'rgba(120, 190, 32, 0.8)',
@@ -32,9 +34,11 @@ export const metroLineColors = {
 export const sistemas = {
   STC: 'Metro',
   'METROBÚS': 'Metrobús',
+  'METROBUS': 'Metrobús',
   ECOBICI: 'Ecobici',
   RUTA: 'Ruta',
   CABLEBUS: 'Cablebús',
+  'CABLEBÚS': 'Cablebús',
   CETRAM: 'Cetram',
   STE: 'STE',
   RTP: 'RTP'

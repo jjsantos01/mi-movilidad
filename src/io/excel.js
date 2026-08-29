@@ -9,40 +9,66 @@ function normalizeHeader(h) {
 }
 
 /**
- * Normaliza el valor de un campo de texto quitando tildes/diacríticos.
+ * Normaliza el valor de un campo de texto quitando tildes/diacríticos, espacios extras y pasando a mayúsculas.
  * Permite comparar strings como '03-VALIDACIÓN' == '03-VALIDACION'.
  */
-function normalizeValue(v) {
-  if (typeof v !== 'string') return v;
-  return v.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+export function normalizeValue(v) {
+  if (v === null || v === undefined) return '';
+  return String(v)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase();
 }
 
 /**
- * Detecta si la primera fila es un título genérico (no una cabecera de datos).
+ * Normaliza el nombre del organismo al formato canónico esperado por la app.
+ */
+export function normalizeOrganismo(v) {
+  if (v === null || v === undefined) return '';
+  const clean = normalizeValue(v);
+  if (clean === 'METROBUS') return 'METROBÚS';
+  if (clean === 'CABLEBUS') return 'CABLEBÚS';
+  return clean;
+}
+
+/**
+ * Detecta la fila de encabezados analizando las primeras filas y puntuando coincidencias con nombres esperados.
  * Retorna el range apropiado para sheet_to_json.
  */
-function detectRange(worksheet) {
-  // Leer la primera fila como array sin encabezado
-  const firstRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0 });
-  if (!firstRows || firstRows.length < 2) return 0;
-  const firstRow = firstRows[0] || [];
-  const secondRow = firstRows[1] || [];
+export function detectRange(worksheet) {
+  const sampleRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0, defval: '' });
+  if (!sampleRows || sampleRows.length === 0) return 0;
 
-  // Verificar si la segunda fila parece una cabecera (contiene 'organismo', 'operacion', etc.)
-  const secondRowNormalized = secondRow.map(h => normalizeHeader(String(h || '')));
-  const EXPECTED_HEADERS = ['organismo', 'operacion', 'monto'];
-  const secondRowIsHeader = EXPECTED_HEADERS.every(h => secondRowNormalized.includes(h));
+  const KNOWN_HEADERS = new Set([
+    'fechahora', 'fecha', 'organismo', 'linea', 'estacion',
+    'operacion', 'monto', 'saldofinal', 'saldo', 'numserie', 'serie'
+  ]);
 
-  // Verificar si la primera fila parece una cabecera
-  const firstRowNormalized = firstRow.map(h => normalizeHeader(String(h || '')));
-  const firstRowIsHeader = EXPECTED_HEADERS.every(h => firstRowNormalized.includes(h));
+  let bestRowIndex = 0;
+  let maxScore = 0;
+  const rowsToCheck = Math.min(sampleRows.length, 10);
 
-  // Si la segunda fila tiene los headers esperados, la primera es el título -> range:1
-  if (secondRowIsHeader) return 1;
-  // Si la primera fila tiene los headers esperados, no hay título -> range:0
-  if (firstRowIsHeader) return 0;
-  // Por defecto, asumir que hay fila de título
-  return 1;
+  for (let r = 0; r < rowsToCheck; r++) {
+    const row = sampleRows[r] || [];
+    let score = 0;
+    for (const cell of row) {
+      const normalized = normalizeHeader(String(cell || ''));
+      if (normalized && KNOWN_HEADERS.has(normalized)) {
+        score++;
+      }
+    }
+    if (score > maxScore) {
+      maxScore = score;
+      bestRowIndex = r;
+    }
+  }
+
+  // Si encontramos una fila con al menos 2 encabezados reconocidos, usamos su índice
+  if (maxScore >= 2) {
+    return bestRowIndex;
+  }
+  return 0;
 }
 
 function valueByCanonical(row, canonical) {
@@ -83,15 +109,15 @@ export async function excelToJson(file) {
           const serieVal = valueByAny(row, ['numserie','num_serie','numserie']);
           return {
             numero: jsonData.length - index, // keep original descending numbering
-            num_serie: serieVal ?? '',
-            organismo: organismoVal,
-            linea: lineaVal,
-            estacion: estacionVal,
-            // Normalizar operacion: quitar tildes para consistencia con comparaciones internas
-            operacion: operacionVal != null ? normalizeValue(String(operacionVal)) : undefined,
-            monto: montoVal != null ? String(montoVal) : '',
-            saldo_final: saldoVal != null ? String(saldoVal) : '',
-            fecha: fechaVal,
+            num_serie: serieVal != null ? String(serieVal).trim() : '',
+            organismo: organismoVal != null ? normalizeOrganismo(organismoVal) : '',
+            linea: lineaVal != null ? String(lineaVal).trim() : '',
+            estacion: estacionVal != null ? String(estacionVal).trim() : '',
+            // Normalizar operacion: quitar tildes, trim y uppercase para consistencia
+            operacion: operacionVal != null ? normalizeValue(operacionVal) : undefined,
+            monto: montoVal != null ? String(montoVal).trim() : '',
+            saldo_final: saldoVal != null ? String(saldoVal).trim() : '',
+            fecha: fechaVal != null ? String(fechaVal).trim() : '',
           };
         });
         resolve(transformedData);

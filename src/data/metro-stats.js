@@ -23,8 +23,8 @@ export function getMetroStats(data, organismo = 'STC', options = {}) {
     const montoNumero = typeof rawMonto === 'number'
       ? rawMonto
       : parseFloat(String(rawMonto).replace(',', '.'));
-    if (!Number.isFinite(montoNumero)) return total;
-    if (viaje.operacion && viaje.operacion !== '03-VALIDACION') return total;
+    const op = String(viaje?.operacion || '').trim().toUpperCase();
+    if (op && op !== '03-VALIDACION') return total;
     return total + montoNumero;
   }, 0);
 

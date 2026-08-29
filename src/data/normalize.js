@@ -1,33 +1,38 @@
-import { getMomentoDia } from '../utils/date.js';
+import { getMomentoDia, parseFechaHora } from '../utils/date.js';
 import { filterTimtEntryValidations } from './timt.js';
 
-const DAYS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const TIMT_ORGANISMO = 'STE';
 const TIMT_LINE = 'TIMT';
 const TIMT_OPERATION = '03-VALIDACION';
 
 function normalizeItem(item) {
-  const [datePart, timePart = '00:00:00'] = String(item.fecha).split(' ');
-  const date = new Date(datePart.split('-').reverse().join('-'));
-  const hora = parseInt((timePart || '00:00:00').split(':')[0]);
+  const dt = parseFechaHora(item.fecha);
+  const hora = dt instanceof Date && !isNaN(dt) ? dt.getHours() : 0;
+  const dayIndex = dt instanceof Date && !isNaN(dt) ? dt.getDay() : 0;
   return {
     ...item,
-    dayOfWeek: DAYS[date.getDay()],
-    momento_dia: getMomentoDia(isNaN(hora) ? 0 : hora),
-    hora: isNaN(hora) ? 0 : hora,
+    dayOfWeek: DAYS[dayIndex],
+    momento_dia: getMomentoDia(hora),
+    hora,
   };
 }
 
 function isTimtValidation(viaje) {
+  const op = String(viaje?.operacion || '').trim().toUpperCase();
   return viaje &&
     viaje.organismo === TIMT_ORGANISMO &&
     viaje.linea === TIMT_LINE &&
-    viaje.operacion === TIMT_OPERATION;
+    op === TIMT_OPERATION;
 }
 
 export function processViajes(data) {
   const processed = (data || [])
-    .filter(item => item && item.fecha && item.organismo && item.operacion !== '71-FIN DE VIAJE' && item.operacion !== '00-RECARGA')
+    .filter(item => {
+      if (!item || !item.fecha || !item.organismo) return false;
+      const op = String(item.operacion || '').trim().toUpperCase();
+      return op !== '71-FIN DE VIAJE' && op !== '00-RECARGA';
+    })
     .map(normalizeItem);
 
   const timtValidations = processed.filter(isTimtValidation);
