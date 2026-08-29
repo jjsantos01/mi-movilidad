@@ -3,7 +3,6 @@
 ## Project Structure & Module Organization
 - Root single-page app: `index.html`, `styles.css`.
 - JS modules live under `src/` with module entrypoint `src/index.js` (loaded in `index.html` via `<script type="module" src="src/index.js"></script>`).
-- Legacy `script.js` exists but is no longer loaded; new work should target the `src/` modules.
 - Static assets: `images/`, map layers in `maps/`, sample/local data in `datos/` (git-ignored).
 - Local dev server: `server.py` (simple CORS-enabled HTTP server).
 - Misc: `.env` for local keys (should be ignored), `.gitignore` configured for `.env*` and notebooks.
@@ -11,11 +10,11 @@
 ### JS Modules Overview (src/)
 - `src/index.js`: App orchestrator. Wires UI events, data processing, charts, maps, and section rendering. Performs lazy loading for heavy/optional features.
 - `src/state.js`: Minimal app state store and registry (`state`, setters, `registerChart`, `mapInstances`). Avoid globals; use this module.
-- `src/ui/`: DOM-only logic (collapsible sections, modal, downloads, table rendering).
+- `src/ui/`: DOM-only logic (collapsible sections, modal, downloads, table rendering, TIMT origin-destination matrix in `timt-table.js`).
 - `src/io/`: File I/O (drag & drop bindings, Excel parsing via XLSX; see `excel.js`).
-- `src/data/`: Pure data transforms, metrics and domain helpers (normalize, metrics, inconsistencias, ecobici, metro-stats).
-- `src/charts/`: Chart/visualization builders (pie, line, stacked-by-day, by-hour, by-momento, heatmap, saldo-final, metro-top10, ecobici-heatmap, ecobici-animation) usando helpers en `charts/common.js`.
-- `src/maps/`: Leaflet map helpers (`base.js`) and map-specific modules (`metro.js`, `ecobici.js`).
+- `src/data/`: Pure data transforms, metrics and domain helpers (normalize, metrics, inconsistencias, ecobici, metro-stats, ste, timt).
+- `src/charts/`: Chart/visualization builders (pie, line, stacked-by-day, by-hour, by-momento, heatmap, calendar, saldo-final, gasto-total, metro-top10, ste, ecobici-heatmap, ecobici-animation) usando helpers en `charts/common.js`.
+- `src/maps/`: Leaflet map helpers (`base.js` con Esri Light Gray Canvas) and map-specific modules (`metro.js`, `ecobici.js`, `timt.js`).
 - `src/utils/`: Small shared utilities (dates, strings).
 - `src/config/constants.js`: App-wide constants (colors, selectors, line colors, prod flag).
 
@@ -49,8 +48,9 @@
 
 ### Manual Checks Specific to Modules
 - Confirm `src/index.js` is loaded as a module and imports resolve (no CORS or MIME errors in console).
-- Validate section toggling and rendering paths (`metroSection`, `metrobusSection`, `ecobiciSection`).
+- Validate section toggling and rendering paths (`metroSection`, `metrobusSection`, `steSection`, `timtSection`, `ecobiciSection`).
 - Verify lazy features load as expected (Ecobici heatmaps) without blocking initial render.
+- Verify map layers load correctly (Metro, Metrobús, TIMT GeoJSON, Ecobici).
 
 ## Commit & Pull Request Guidelines
 - Use concise, conventional-style messages: `feat: …`, `fix: …`, `docs: …`, `chore: …`.
@@ -66,6 +66,11 @@
 - Maintain static hosting compatibility (GitHub Pages). Avoid heavy dependencies or bundlers unless discussed.
 - Preserve public API/DOM hooks expected by `index.html` and existing CSS (IDs/classes referenced across `src/ui/*`, `src/charts/*`, `src/maps/*`). If changing an ID/class, update all affected modules.
 - Update `README.md` if commands or user flows change.
+
+### Documentation Discovery & Maintenance (`docs/`)
+- A modular documentation directory mirrors the repository structure under `docs/` with architecture guidelines in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+- **Mandatory Agent Rule:** Before modifying or adding code, consult the relevant `.md` files in `docs/` to quickly discover component responsibilities, exports, DOM bindings, and dependencies without reading through whole source files.
+- Whenever files are added, refactored, or deleted, you **MUST** update or create the corresponding `.md` in `docs/` and keep [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) in sync.
 
 ### Adding or Changing Functionality
 - Place new logic under the appropriate `src/` subfolder and export named functions.
