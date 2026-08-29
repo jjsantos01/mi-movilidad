@@ -8,6 +8,7 @@ export const colorPalette = {
   RUTA: 'rgba(155, 38, 182, 0.8)',
   CABLEBUS: 'rgba(78, 195, 224, 0.8)',
   'CABLEBÚS': 'rgba(78, 195, 224, 0.8)',
+  ORT: 'rgba(78, 195, 224, 0.8)',
   CETRAM: 'rgba(240, 78, 152, 0.8)',
   STE: 'rgba(0, 87, 184, 0.8)',
   RTP: 'rgba(120, 190, 32, 0.8)',
@@ -39,6 +40,7 @@ export const sistemas = {
   RUTA: 'Ruta',
   CABLEBUS: 'Cablebús',
   'CABLEBÚS': 'Cablebús',
+  ORT: 'Cablebús / ORT',
   CETRAM: 'Cetram',
   STE: 'STE',
   RTP: 'RTP'

@@ -67,15 +67,15 @@ export function groupTimtTrips(events, windowMinutes = TIMT_WINDOW_MINUTES) {
 
   for (const { event, parsedDate } of sorted) {
     const op = String(event.operacion || '').trim().toUpperCase();
-    const isIngreso = op.startsWith('06') || op.includes('INGRESO');
-    const isSalida = op.startsWith('0B') || op.includes('SALIDA');
+    const isExplicitIngreso = op.startsWith('06') || op.includes('INGRESO');
+    const isExplicitSalida = op.startsWith('0B') || op.includes('SALIDA');
 
-    if (isIngreso) {
+    if (isExplicitIngreso) {
       if (pendingEntry) {
         trips.push(createIncompleteEntryTrip(pendingEntry));
       }
-      pendingEntry = { event, parsedDate };
-    } else if (isSalida) {
+      pendingEntry = { event, parsedDate, isExplicit: true };
+    } else if (isExplicitSalida) {
       if (pendingEntry && (parsedDate - pendingEntry.parsedDate <= maxMs)) {
         const durationMs = parsedDate - pendingEntry.parsedDate;
         const duracionMinutos = durationMs >= 0 ? Math.round(durationMs / 60000) : 0;
@@ -112,21 +112,37 @@ export function groupTimtTrips(events, windowMinutes = TIMT_WINDOW_MINUTES) {
         });
       }
     } else {
+      // Validación genérica (ej. '03-VALIDACION' de 2025 o tarifa plana)
+      const currentStation = normalizeStationName(event.estacion);
+
+      // Si hay una entrada previa '03' de estación distinta en <= maxMs, emparejar como viaje (compatibilidad 2025)
+      if (pendingEntry && !pendingEntry.isExplicit && (parsedDate - pendingEntry.parsedDate <= maxMs)) {
+        const prevStation = normalizeStationName(pendingEntry.event.estacion);
+        if (currentStation && prevStation && currentStation !== prevStation) {
+          const durationMs = parsedDate - pendingEntry.parsedDate;
+          const duracionMinutos = durationMs >= 0 ? Math.round(durationMs / 60000) : 0;
+          const monto = Number((parseAmount(pendingEntry.event.monto) + parseAmount(event.monto)).toFixed(2));
+          trips.push({
+            estacion: prevStation,
+            estacionOrigen: prevStation,
+            estacionDestino: currentStation,
+            fecha: pendingEntry.event.fecha,
+            fechaFin: event.fecha,
+            monto,
+            duracionMinutos,
+            eventos: [pendingEntry.event, event],
+          });
+          pendingEntry = null;
+          continue;
+        }
+      }
+
       if (pendingEntry) {
         trips.push(createIncompleteEntryTrip(pendingEntry));
         pendingEntry = null;
       }
-      const estacion = normalizeStationName(event.estacion) || UNKNOWN_STATION;
-      trips.push({
-        estacion,
-        estacionOrigen: estacion,
-        estacionDestino: UNKNOWN_STATION,
-        fecha: event.fecha,
-        fechaFin: event.fecha,
-        monto: parseAmount(event.monto),
-        duracionMinutos: 0,
-        eventos: [event],
-      });
+
+      pendingEntry = { event, parsedDate, isExplicit: false };
     }
   }
 
