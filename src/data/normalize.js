@@ -19,11 +19,9 @@ function normalizeItem(item) {
 }
 
 function isTimtValidation(viaje) {
-  const op = String(viaje?.operacion || '').trim().toUpperCase();
-  return viaje &&
-    viaje.organismo === TIMT_ORGANISMO &&
-    viaje.linea === TIMT_LINE &&
-    op === TIMT_OPERATION;
+  if (!viaje || viaje.organismo !== TIMT_ORGANISMO || viaje.linea !== TIMT_LINE) return false;
+  const op = String(viaje.operacion || '').trim().toUpperCase();
+  return op !== '00-RECARGA' && op.indexOf('RECARGA') === -1;
 }
 
 export function processViajes(data) {
