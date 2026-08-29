@@ -34,42 +34,22 @@ function normalizeStationName(name) {
   return String(name).trim();
 }
 
-function createTripFromEvent(event, parsedDate) {
-  const estacionOrigen = normalizeStationName(event.estacion) || UNKNOWN_STATION;
-  const monto = parseAmount(event.monto);
+function createIncompleteEntryTrip(entry) {
+  const estacionOrigen = normalizeStationName(entry.event.estacion) || UNKNOWN_STATION;
   return {
     estacion: estacionOrigen,
     estacionOrigen,
     estacionDestino: UNKNOWN_STATION,
-    fecha: event.fecha,
-    fechaFin: event.fecha,
-    monto,
-    eventos: [event],
-    _startDate: parsedDate,
-    _endDate: parsedDate,
-  };
-}
-
-function finalizeTrip(trip) {
-  const durationMs = trip._endDate - trip._startDate;
-  trip.duracionMinutos = Number.isFinite(durationMs) ? Math.round(durationMs / 60000) : 0;
-  if (!trip.estacionDestino || !trip.estacionDestino.trim()) {
-    trip.estacionDestino = UNKNOWN_STATION;
-  }
-  return {
-    estacion: trip.estacion,
-    estacionOrigen: trip.estacionOrigen,
-    estacionDestino: trip.estacionDestino,
-    fecha: trip.fecha,
-    fechaFin: trip.fechaFin,
-    monto: Number(trip.monto.toFixed(2)),
-    duracionMinutos: trip.duracionMinutos,
-    eventos: trip.eventos,
+    fecha: entry.event.fecha,
+    fechaFin: entry.event.fecha,
+    monto: parseAmount(entry.event.monto),
+    duracionMinutos: 0,
+    eventos: [entry.event],
   };
 }
 
 export function groupTimtTrips(events, windowMinutes = TIMT_WINDOW_MINUTES) {
-  const msWindow = windowMinutes * 60 * 1000;
+  const maxMs = windowMinutes * 60 * 1000;
   const sorted = (events || [])
     .map(event => {
       if (!event) return null;
@@ -83,31 +63,76 @@ export function groupTimtTrips(events, windowMinutes = TIMT_WINDOW_MINUTES) {
   if (sorted.length === 0) return [];
 
   const trips = [];
-  let currentTrip = null;
+  let pendingEntry = null;
 
-  sorted.forEach(({ event, parsedDate }) => {
-    if (!currentTrip) {
-      currentTrip = createTripFromEvent(event, parsedDate);
-      return;
-    }
+  for (const { event, parsedDate } of sorted) {
+    const op = String(event.operacion || '').trim().toUpperCase();
+    const isIngreso = op.startsWith('06') || op.includes('INGRESO');
+    const isSalida = op.startsWith('0B') || op.includes('SALIDA');
 
-    const diff = parsedDate - currentTrip._endDate;
-    if (diff <= msWindow) {
-      currentTrip.eventos.push(event);
-      currentTrip._endDate = parsedDate;
-      currentTrip.fechaFin = event.fecha;
-      currentTrip.monto += parseAmount(event.monto);
-      const stationName = normalizeStationName(event.estacion);
-      if (stationName) {
-        currentTrip.estacionDestino = stationName;
+    if (isIngreso) {
+      if (pendingEntry) {
+        trips.push(createIncompleteEntryTrip(pendingEntry));
+      }
+      pendingEntry = { event, parsedDate };
+    } else if (isSalida) {
+      if (pendingEntry && (parsedDate - pendingEntry.parsedDate <= maxMs)) {
+        const durationMs = parsedDate - pendingEntry.parsedDate;
+        const duracionMinutos = durationMs >= 0 ? Math.round(durationMs / 60000) : 0;
+        const estacionOrigen = normalizeStationName(pendingEntry.event.estacion) || UNKNOWN_STATION;
+        const estacionDestino = normalizeStationName(event.estacion) || UNKNOWN_STATION;
+        const monto = Number((parseAmount(pendingEntry.event.monto) + parseAmount(event.monto)).toFixed(2));
+
+        trips.push({
+          estacion: estacionOrigen,
+          estacionOrigen,
+          estacionDestino,
+          fecha: pendingEntry.event.fecha,
+          fechaFin: event.fecha,
+          monto,
+          duracionMinutos,
+          eventos: [pendingEntry.event, event],
+        });
+        pendingEntry = null;
+      } else {
+        if (pendingEntry) {
+          trips.push(createIncompleteEntryTrip(pendingEntry));
+          pendingEntry = null;
+        }
+        const estacionDestino = normalizeStationName(event.estacion) || UNKNOWN_STATION;
+        trips.push({
+          estacion: estacionDestino,
+          estacionOrigen: UNKNOWN_STATION,
+          estacionDestino,
+          fecha: event.fecha,
+          fechaFin: event.fecha,
+          monto: parseAmount(event.monto),
+          duracionMinutos: 0,
+          eventos: [event],
+        });
       }
     } else {
-      trips.push(finalizeTrip(currentTrip));
-      currentTrip = createTripFromEvent(event, parsedDate);
+      if (pendingEntry) {
+        trips.push(createIncompleteEntryTrip(pendingEntry));
+        pendingEntry = null;
+      }
+      const estacion = normalizeStationName(event.estacion) || UNKNOWN_STATION;
+      trips.push({
+        estacion,
+        estacionOrigen: estacion,
+        estacionDestino: UNKNOWN_STATION,
+        fecha: event.fecha,
+        fechaFin: event.fecha,
+        monto: parseAmount(event.monto),
+        duracionMinutos: 0,
+        eventos: [event],
+      });
     }
-  });
+  }
 
-  if (currentTrip) trips.push(finalizeTrip(currentTrip));
+  if (pendingEntry) {
+    trips.push(createIncompleteEntryTrip(pendingEntry));
+  }
 
   return trips;
 }
